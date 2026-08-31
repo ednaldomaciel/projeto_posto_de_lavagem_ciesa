@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Posto de Lavagem - Dashboard de Pátio</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --primary: #0d6efd;
+            --warning: #ffc107;
+            --info: #0dcaf0;
+            --success: #198754;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Container do Kanban */
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+        }
+
+        .kanban-column {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 400px;
+        }
+
+        .column-header {
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .os-card {
+            background: var(--card-bg);
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 5px solid var(--primary);
+        }
+
+        .os-card.execucao { border-left-color: var(--warning); }
+        .os-card.lavada { border-left-color: var(--info); }
+        .os-card.pronta { border-left-color: var(--success); }
+
+        .os-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .plate-badge {
+            background: #000;
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            letter-spacing: 1px;
+        }
+
+        .os-details {
+            font-size: 0.85rem;
+            color: #555;
+            margin: 8px 0;
+        }
+
+        .tag-faturado {
+            background: #d1e7dd;
+            color: #0f5132;
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h2>🚗 Posto de Lavagem — Monitor de Pátio</h2>
+        <button class="btn-primary">+ Nova Ordem de Serviço</button>
+    </header>
+
+    <main class="kanban-board">
+        <!-- Coluna 1: Aguardando Fila -->
+        <section class="kanban-column">
+            <div class="column-header">
+                <span>⏳ Aguardando Fila</span>
+                <span>(2)</span>
+            </div>
+            
+            <div class="os-card">
+                <div class="os-header">
+                    <span>O.S. #1042</span>
+                    <span class="plate-badge">ABC-1234</span>
+                </div>
+                <div class="os-details">
+                    <p><strong>Veículo:</strong> Corolla Prata</p>
+                    <p><strong>Serviço:</strong> Lavagem Completa</p>
+                    <p><strong>Lavador:</strong> Carlos Silva</p>
+                </div>
+            </div>
+
+            <div class="os-card">
+                <div class="os-header">
+                    <span>O.S. #1043</span>
+                    <span class="plate-badge">XYZ-9876</span>
+                </div>
+                <div class="os-details">
+                    <p><strong>Veículo:</strong> Hilux Branca <span class="tag-faturado">Faturado</span></p>
+                    <p><strong>Serviço:</strong> Ducha + Cera</p>
+                    <p><strong>Lavador:</strong> Não Atribuído</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Coluna 2: Em Execução -->
+        <section class="kanban-column">
+            <div class="column-header">
+                <span>🧼 Em Execução</span>
+                <span>(1)</span>
+            </div>
+
+            <div class="os-card execucao">
+                <div class="os-header">
+                    <span>O.S. #1040</span>
+                    <span class="plate-badge">KGB-4421</span>
+                </div>
+                <div class="os-details">
+                    <p><strong>Veículo:</strong> Jeep Compass Preto</p>
+                    <p><strong>Serviço:</strong> Higienização</p>
+                    <p><strong>Lavador:</strong> João Pedro</p>
+                    <p><strong>Tempo:</strong> 25 min decorridos</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Coluna 3: Lavada -->
+        <section class="kanban-column">
+            <div class="column-header">
+                <span>✨ Lavada / Vistoria</span>
+                <span>(1)</span>
+            </div>
+
+            <div class="os-card lavada">
+                <div class="os-header">
+                    <span>O.S. #1039</span>
+                    <span class="plate-badge">MNO-5566</span>
+                </div>
+                <div class="os-details">
+                    <p><strong>Veículo:</strong> Onix Vermelho</p>
+                    <p><strong>Serviço:</strong> Lavagem Simples</p>
+                    <p><strong>Status Pagamento:</strong> Pendente (Retirada)</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Coluna 4: Pronta para Retirada -->
+        <section class="kanban-column">
+            <div class="column-header">
+                <span>✅ Pronta para Retirada</span>
+                <span>(1)</span>
+            </div>
+
+            <div class="os-card pronta">
+                <div class="os-header">
+                    <span>O.S. #1038</span>
+                    <span class="plate-badge">JKL-3322</span>
+                </div>
+                <div class="os-details">
+                    <p><strong>Veículo:</strong> Civic Cinza</p>
+                    <p><strong>Serviço:</strong> Lavagem Completa</p>
+                    <p><strong>Pagamento:</strong> 🟢 Concluído (Entrada)</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>
