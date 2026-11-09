@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel de Gestão e Caixa (ADM){% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6 space-y-6">
+
+    <!-- Header do Painel -->
+    <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-blue-600"></i> Painel de Gestão e Caixa Diário
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Visão consolidada para a administração • <strong>{{ data_atual|date:"d/m/Y" }}</strong></p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-300/60 flex items-center gap-1.5">
+                <i class="fa-solid fa-shield-halved"></i> Acesso Restrito: Administrador (RN03)
+            </span>
+            <a href="/admin/lavajato/" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3.5 py-1.5 rounded-xl font-semibold transition">
+                <i class="fa-solid fa-sliders"></i> Gerenciar Cadastros
+            </a>
+        </div>
+    </div>
+
+    <!-- Cards de Indicadores Financeiros do Dia (RF08) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Faturamento Total -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase">Faturamento Diário</p>
+                <h3 class="text-2xl font-black text-slate-800 mt-1">R$ {{ faturamento_diario|floatformat:2 }}</h3>
+                <span class="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> Pagamentos liquidados</span>
+            </div>
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+        </div>
+
+        <!-- Total de Lavagens -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase">Lavagens Concluídas</p>
+                <h3 class="text-2xl font-black text-slate-800 mt-1">{{ total_lavagens_concluidas }}</h3>
+                <span class="text-[11px] text-slate-500">Veículos finalizados</span>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fa-solid fa-car-side"></i>
+            </div>
+        </div>
+
+        <!-- Comissões a Pagar (RF03) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase">Comissões (Lavadores)</p>
+                <h3 class="text-2xl font-black text-slate-800 mt-1">R$ {{ total_comissoes|floatformat:2 }}</h3>
+                <span class="text-[11px] text-purple-600 font-semibold">Repasse operacional (RF03)</span>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fa-solid fa-hand-holding-dollar"></i>
+            </div>
+        </div>
+
+        <!-- Lucro Líquido do Dia -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <div>
+                <p class="text-xs font-semibold text-slate-500 uppercase">Lucro Líquido</p>
+                <h3 class="text-2xl font-black text-slate-800 mt-1">R$ {{ lucro_liquido|floatformat:2 }}</h3>
+                <span class="text-[11px] text-emerald-600 font-semibold">Líquido do posto</span>
+            </div>
+            <div class="w-12 h-12 bg-teal-100 text-teal-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção Dividida: Comissões dos Lavadores & Métodos de Pagamento -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Tabela de Comissões por Lavador (RF03, RF08) -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-users-gear text-blue-600"></i> Desempenho e Comissões dos Lavadores
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                        <tr>
+                            <th class="p-3 rounded-l-lg">Lavador</th>
+                            <th class="p-3 text-center">Taxa (%)</th>
+                            <th class="p-3 text-center">Lavagens</th>
+                            <th class="p-3 rounded-r-lg text-right">A Receber</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in desempenho_lavadores %}
+                        <tr>
+                            <td class="p-3 font-semibold text-slate-800">{{ item.lavador.nome }}</td>
+                            <td class="p-3 text-center font-mono text-slate-600">{{ item.lavador.percentual_comissao }}%</td>
+                            <td class="p-3 text-center font-bold text-blue-600">{{ item.quantidade }}</td>
+                            <td class="p-3 text-right font-mono font-bold text-emerald-600">R$ {{ item.comissao|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="p-4 text-center text-slate-400">Nenhum lavador com serviços finalizados hoje.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Formas de Pagamento Realizadas -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-money-check-dollar text-emerald-600"></i> Distribuição por Forma de Pagamento
+            </h3>
+            <div class="space-y-3">
+                {% for fp in formas_pgto %}
+                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
+                    <div class="flex items-center gap-2.5">
+                        <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                            <i class="fa-solid fa-wallet"></i>
+                        </span>
+                        <div>
+                            <p class="font-bold text-slate-800 text-xs">{{ fp.forma_pagamento }}</p>
+                            <span class="text-[11px] text-slate-500">{{ fp.qtd }} transações</span>
+                        </div>
+                    </div>
+                    <span class="font-mono font-black text-slate-800 text-sm">R$ {{ fp.total|floatformat:2 }}</span>
+                </div>
+                {% empty %}
+                <p class="text-xs text-slate-400 p-4 text-center">Nenhum pagamento liquidado até o momento.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+

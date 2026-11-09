@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Pátio - Lava Jato do Valmir</title>
+    <!-- Tailwind CSS para estilização rápida e moderna -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans pb-10">
+
+    <!-- Cabeçalho -->
+    <header class="bg-blue-600 text-white p-4 shadow-lg sticky top-0 z-10 flex justify-between items-center">
+        <div>
+            <h1 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-car-wash"></i> Lava Jato do Valmir</h1>
+            <p class="text-xs text-blue-100">Controle de Pátio (Lavadores)</p>
+        </div>
+        <span class="bg-blue-800 text-xs px-2.5 py-1 rounded-full text-blue-200">
+            <i class="fa-solid fa-wifi text-emerald-400"></i> Online
+        </span>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-md mx-auto p-4 space-y-4">
+
+        <!-- Card de Veículo em Lavagem -->
+        <div class="bg-white rounded-xl shadow-md border-l-8 border-amber-500 p-4 relative">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="bg-slate-800 text-white font-mono font-bold text-sm px-2.5 py-1 rounded tracking-wider shadow">
+                        JEX-8921
+                    </span>
+                    <h2 class="font-bold text-lg mt-2">Toyota Hilux (Prata)</h2>
+                    <p class="text-xs text-slate-500">Serviço: <span class="font-semibold text-slate-700">Geral + Cera</span></p>
+                    <p class="text-xs text-slate-500">Lavador: <span class="font-semibold text-blue-600">Ednaldo</span></p>
+                </div>
+                <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-1 rounded-full uppercase">
+                    Em Lavagem
+                </span>
+            </div>
+
+            <!-- Ações de Mudança de Status (RF05) -->
+            <div class="mt-4 pt-3 border-t border-slate-100 flex gap-2">
+                <button class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-wind"></i> Mudar p/ Secagem
+                </button>
+                <button class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-check"></i> Concluir
+                </button>
+            </div>
+        </div>
+
+        <!-- Card de Veículo em Fila -->
+        <div class="bg-white rounded-xl shadow-md border-l-8 border-blue-500 p-4 relative">
+            <div class="flex justify-between items-start">
+                <div>
+                    <span class="bg-slate-800 text-white font-mono font-bold text-sm px-2.5 py-1 rounded tracking-wider shadow">
+                        NOX-4012
+                    </span>
+                    <h2 class="font-bold text-lg mt-2">Chevrolet Onix (Preto)</h2>
+                    <p class="text-xs text-slate-500">Serviço: <span class="font-semibold text-slate-700">Lavagem Simples</span></p>
+                    <p class="text-xs text-slate-500">Lavador: <span class="font-semibold text-blue-600">Aguardando Atribuição</span></p>
+                </div>
+                <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded-full uppercase">
+                    Em Fila
+                </span>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100">
+                <button class="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium text-xs py-2 px-3 rounded-lg flex items-center justify-center gap-1">
+                    <i class="fa-solid fa-hand-sparkles"></i> Iniciar Lavagem
+                </button>
+            </div>
+        </div>
+
+    </main>
+</body>
+</html>

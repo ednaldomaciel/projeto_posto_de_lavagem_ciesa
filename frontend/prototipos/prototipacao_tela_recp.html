@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recepção - Lava Jato do Valmir</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+
+    <!-- Topbar -->
+    <nav class="bg-slate-900 text-white p-4 shadow-md flex justify-between items-center">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-car-wash text-blue-400 text-2xl"></i>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">Lava Jato do Valmir</h1>
+                <p class="text-xs text-slate-400">Módulo de Atendimento e Recepção</p>
+            </div>
+        </div>
+        <div class="text-right text-xs text-slate-300">
+            <p class="font-medium text-white">Atendente: <span class="text-blue-400">Recepcionista</span></p>
+            <p>18/10/2026 - 11:04</p>
+        </div>
+    </nav>
+
+    <!-- Layout Grid -->
+    <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Coluna Esquerda: Formulário de Abertura de OS (RF05) -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
+                <i class="fa-solid fa-plus-circle text-blue-600"></i> Abrir Ordem de Serviço
+            </h2>
+
+            <form class="space-y-4">
+                <!-- Procura de Placa -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Placa do Veículo</label>
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="ABC-1234" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                        <button type="button" class="bg-slate-800 hover:bg-slate-900 text-white px-3 py-2 rounded-lg text-xs font-medium">Buscar</button>
+                    </div>
+                </div>
+
+                <!-- Alerta de Cliente Faturado (RN01) -->
+                <div class="bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 rounded-lg flex items-start gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600 mt-0.5"></i>
+                    <div>
+                        <span class="font-bold">Cliente Conveniado/Faturado:</span>
+                        <p class="text-amber-700">Esta frota tem limite de 1 lavagem por semana. Nenhuma lavagem realizada esta semana.</p>
+                    </div>
+                </div>
+
+                <!-- Cliente e Veículo -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Cliente / Empresa</label>
+                    <input type="text" value="Frota TransAmazonas (Faturado)" readonly class="w-full bg-slate-100 border border-slate-200 text-slate-600 rounded-lg p-2 text-sm font-medium">
+                </div>
+
+                <!-- Seleção de Serviço (RF04) -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tipo de Serviço</label>
+                    <select class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option>Lavagem Geral - R$ 50,00</option>
+                        <option>Lavagem Simples - R$ 35,00</option>
+                        <option>Geral + Cera - R$ 80,00</option>
+                    </select>
+                </div>
+
+                <!-- Atribuição de Lavador (RF03) -->
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Lavador Responsável</label>
+                    <select class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option>Ednaldo (Próximo da Fila)</option>
+                        <option>Carlos</option>
+                        <option>Marcos</option>
+                    </select>
+                </div>
+
+                <!-- Botão de Ação -->
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> Emitir Ordem de Serviço
+                </button>
+            </form>
+        </div>
+
+        <!-- Coluna Direita: Painel do Pátio em Tempo Real (RF05, RF07) -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-emerald-600"></i> Pátio em Tempo Real
+                </h2>
+                <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold">Total: 4 Veículos</span>
+            </div>
+
+            <!-- Tabela de Ordens de Serviço -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                        <tr>
+                            <th class="p-3 rounded-l-lg">OS</th>
+                            <th class="p-3">Veículo / Placa</th>
+                            <th class="p-3">Serviço</th>
+                            <th class="p-3">Lavador</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 rounded-r-lg text-right">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr>
+                            <td class="p-3 font-mono font-bold">#102</td>
+                            <td class="p-3">
+                                <p class="font-bold">Toyota Hilux</p>
+                                <span class="bg-slate-800 text-white text-[10px] font-mono px-1.5 py-0.5 rounded">JEX-8921</span>
+                            </td>
+                            <td class="p-3">Geral + Cera</td>
+                            <td class="p-3">Ednaldo</td>
+                            <td class="p-3">
+                                <span class="bg-amber-100 text-amber-800 text-xs px-2 py-1 rounded-full font-bold">Em Lavagem</span>
+                            </td>
+                            <td class="p-3 text-right">
+                                <button class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-medium">Cobrar</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="p-3 font-mono font-bold">#103</td>
+                            <td class="p-3">
+                                <p class="font-bold">Chevrolet Onix</p>
+                                <span class="bg-slate-800 text-white text-[10px] font-mono px-1.5 py-0.5 rounded">NOX-4012</span>
+                            </td>
+                            <td class="p-3">Simples</td>
+                            <td class="p-3">Carlos</td>
+                            <td class="p-3">
+                                <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full font-bold">Em Fila</span>
+                            </td>
+                            <td class="p-3 text-right">
+                                <button class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs px-2.5 py-1.5 rounded-lg font-medium">Editar</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

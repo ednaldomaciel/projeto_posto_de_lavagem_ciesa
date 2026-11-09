@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lava Jato do Valmir{% endblock %} - Sistema de Gestão</title>
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Topbar Corporativo -->
+    <nav class="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <a href="{% url 'recepcao' %}" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-md group-hover:scale-105 transition">
+                        <i class="fa-solid fa-car-wash text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight tracking-wide">Lava Jato do Valmir</h1>
+                        <p class="text-[11px] text-slate-400">Sistema de Gestão & Operação • CIESA</p>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Navegação Rápida entre Módulos -->
+            <div class="flex items-center gap-2">
+                <a href="{% url 'recepcao' %}" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition {% if request.resolver_match.url_name == 'recepcao' %}bg-blue-600 text-white shadow{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                    <i class="fa-solid fa-desktop"></i> Recepção
+                </a>
+                <a href="{% url 'patio' %}" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition {% if request.resolver_match.url_name == 'patio' %}bg-blue-600 text-white shadow{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                    <i class="fa-solid fa-tablet-screen-button"></i> Pátio
+                </a>
+                {% if user.is_superuser or user.is_staff %}
+                <a href="{% url 'gerenciamento' %}" class="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition {% if request.resolver_match.url_name == 'gerenciamento' %}bg-blue-600 text-white shadow{% else %}bg-slate-800 text-slate-300 hover:bg-slate-700{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i> Gestão (ADM)
+                </a>
+                <a href="/admin/" target="_blank" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-gear"></i> Painel Admin
+                </a>
+                {% endif %}
+            </div>
+
+            <!-- Info do Usuário -->
+            <div class="flex items-center gap-3 text-xs">
+                {% if user.is_authenticated %}
+                <div class="text-right hidden sm:block">
+                    <p class="font-bold text-white">{{ user.get_full_name|default:user.username }}</p>
+                    <p class="text-[10px] text-slate-400">
+                        {% if user.is_superuser %}Administrador Geral{% else %}Operador(a){% endif %}
+                    </p>
+                </div>
+                <form action="{% url 'logout' %}" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" title="Sair do Sistema" class="p-2 bg-slate-800 hover:bg-rose-900/60 text-slate-300 hover:text-rose-300 rounded-lg transition">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </form>
+                {% else %}
+                <a href="{% url 'login' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold">Entrar</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Feedback e Mensagens Flash -->
+    <div class="max-w-7xl mx-auto px-6 pt-4 w-full">
+        {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+            <div class="p-3.5 rounded-xl text-sm font-medium flex items-center justify-between shadow-sm border {% if message.tags == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800{% elif message.tags == 'error' %}bg-rose-50 border-rose-200 text-rose-800{% elif message.tags == 'warning' %}bg-amber-50 border-amber-200 text-amber-800{% else %}bg-blue-50 border-blue-200 text-blue-800{% endif %}">
+                <div class="flex items-center gap-2">
+                    {% if message.tags == 'success' %}<i class="fa-solid fa-circle-check text-emerald-600"></i>
+                    {% elif message.tags == 'error' %}<i class="fa-solid fa-circle-xmark text-rose-600"></i>
+                    {% elif message.tags == 'warning' %}<i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                    {% else %}<i class="fa-solid fa-circle-info text-blue-600"></i>{% endif %}
+                    <span>{{ message }}</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 ml-3">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Conteúdo Específico da Página -->
+    <main class="flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-8 text-center text-xs text-slate-500">
+        <p><strong>Lava Jato do Valmir</strong> • Trabalho de Conclusão / Sistema de Gestão - CIESA 2026</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Autor: Ednaldo Maciel da Silva • Ciência da Computação</p>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+

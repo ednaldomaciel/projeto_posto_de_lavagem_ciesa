@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+
+{% block title %}Recepção e Atendimento{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Coluna Esquerda: Formulário de Abertura de OS (RF05, RN01, RN02) -->
+    <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
+            <i class="fa-solid fa-plus-circle text-blue-600"></i> Abrir Ordem de Serviço
+        </h2>
+
+        <!-- Procura de Placa -->
+        <form method="GET" action="{% url 'recepcao' %}" class="mb-4">
+            <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Buscar Placa do Veículo</label>
+            <div class="flex gap-2">
+                <input type="text" name="placa" value="{{ termo_placa }}" placeholder="Ex: ABC1D23" required
+                       class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-mono uppercase font-bold focus:ring-2 focus:ring-blue-500 outline-none">
+                <button type="submit" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 transition">
+                    <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                </button>
+            </div>
+        </form>
+
+        <!-- Alerta de Validação RN01 (Regra de Negócio: Faturados) -->
+        {% if alerta_rn01 %}
+        <div class="mb-4 p-3.5 rounded-xl text-xs flex items-start gap-2.5 border {% if alerta_rn01.tipo == 'danger' %}bg-rose-50 border-rose-200 text-rose-800{% else %}bg-amber-50 border-amber-200 text-amber-800{% endif %}">
+            <i class="fa-solid {% if alerta_rn01.tipo == 'danger' %}fa-ban text-rose-600{% else %}fa-triangle-exclamation text-amber-600{% endif %} mt-0.5 text-base"></i>
+            <div>
+                <p class="font-bold">{{ alerta_rn01.titulo }}</p>
+                <p class="mt-0.5">{{ alerta_rn01.mensagem }}</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Informações do Veículo Localizado -->
+        {% if veiculo_selecionado %}
+        <div class="bg-blue-50/60 border border-blue-200 rounded-xl p-3.5 mb-4 text-xs">
+            <div class="flex justify-between items-center mb-1">
+                <span class="font-bold text-slate-800">{{ veiculo_selecionado.marca }} {{ veiculo_selecionado.modelo }} ({{ veiculo_selecionado.cor|default:'-' }})</span>
+                <span class="bg-blue-600 text-white font-mono px-2 py-0.5 rounded text-[11px] font-bold">{{ veiculo_selecionado.placa }}</span>
+            </div>
+            <p class="text-slate-600">Cliente: <strong class="text-slate-800">{{ veiculo_selecionado.cliente.nome }}</strong></p>
+            <p class="text-slate-500">Tipo: <span class="font-semibold text-blue-700">{{ veiculo_selecionado.cliente.get_tipo_display }}</span></p>
+        </div>
+        {% endif %}
+
+        <!-- Formulário Principal -->
+        <form method="POST" action="{% url 'recepcao' %}" class="space-y-4">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Veículo Selecionado</label>
+                {{ form.veiculo }}
+                {% if form.veiculo.errors %}<p class="text-rose-600 text-xs mt-1">{{ form.veiculo.errors.0 }}</p>{% endif %}
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tipo de Serviço (RF04)</label>
+                {{ form.servico }}
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Lavador Responsável (RF03)</label>
+                {{ form.lavador }}
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Vistoria e Avarias Prévias</label>
+                {{ form.observacoes_veiculo }}
+            </div>
+
+            <!-- Opção de Pagamento Flexível (RN02) -->
+            <div class="pt-3 border-t border-slate-100">
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Pagamento Imediato (Opcional - RN02)</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <select name="forma_pagamento" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                        <option value="">Pagar na Retirada (Pendente)</option>
+                        <option value="PIX">PIX (Pago Agora)</option>
+                        <option value="DINHEIRO">Dinheiro (Pago Agora)</option>
+                        <option value="CARTAO">Cartão (Pago Agora)</option>
+                        <option value="FATURADO">Faturado / Convênio</option>
+                    </select>
+                    <select name="momento_pagamento" class="bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+                        <option value="ENTRADA">No Momento da Entrada</option>
+                        <option value="RETIRADA">Na Retirada do Veículo</option>
+                    </select>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow-md transition flex items-center justify-center gap-2 mt-4">
+                <i class="fa-solid fa-check"></i> Emitir Ordem de Serviço
+            </button>
+        </form>
+    </div>
+
+    <!-- Coluna Direita: Painel do Pátio em Tempo Real (RF05, RF07) -->
+    <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-emerald-600"></i> Pátio em Tempo Real
+            </h2>
+            <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1 rounded-full font-semibold">
+                Total Ativo: <strong>{{ ordens_ativas.count }}</strong> veículos
+            </span>
+        </div>
+
+        <!-- Tabela de Ordens de Serviço -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                    <tr>
+                        <th class="p-3 rounded-l-lg">OS</th>
+                        <th class="p-3">Veículo / Placa</th>
+                        <th class="p-3">Serviço</th>
+                        <th class="p-3">Lavador</th>
+                        <th class="p-3">Status</th>
+                        <th class="p-3">Pgto</th>
+                        <th class="p-3 rounded-r-lg text-right">Ação</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for os in ordens_ativas %}
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="p-3 font-mono font-bold text-slate-700">#{{ os.id|stringformat:"04d" }}</td>
+                        <td class="p-3">
+                            <p class="font-bold text-slate-800">{{ os.veiculo.marca }} {{ os.veiculo.modelo }}</p>
+                            <span class="bg-slate-800 text-white text-[10px] font-mono px-1.5 py-0.5 rounded font-bold">{{ os.veiculo.placa }}</span>
+                            <span class="text-[11px] text-slate-500 block sm:inline sm:ml-1">({{ os.veiculo.cliente.nome|truncatechars:20 }})</span>
+                        </td>
+                        <td class="p-3 text-slate-700">
+                            {{ os.servico.descricao }}
+                            <span class="text-xs text-slate-500 block font-semibold">R$ {{ os.valor_total|default:os.servico.valor|floatformat:2 }}</span>
+                        </td>
+                        <td class="p-3 text-slate-700 font-medium">
+                            <i class="fa-solid fa-user text-slate-400 text-xs"></i> {{ os.lavador.nome }}
+                        </td>
+                        <td class="p-3">
+                            {% if os.status == 'FILA' %}
+                            <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold">Em Fila</span>
+                            {% elif os.status == 'LAVAGEM' %}
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold">Em Lavagem</span>
+                            {% elif os.status == 'SECAGEM' %}
+                            <span class="bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-bold">Secagem</span>
+                            {% elif os.status == 'CONCLUIDO' %}
+                            <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">Concluído</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3">
+                            {% if os.pagamento and os.pagamento.status == 'CONCLUIDO' %}
+                            <span class="text-emerald-600 font-bold text-xs" title="{{ os.pagamento.get_forma_pagamento_display }}">
+                                <i class="fa-solid fa-check"></i> Pago ({{ os.pagamento.forma_pagamento }})
+                            </span>
+                            {% else %}
+                            <span class="text-amber-600 font-bold text-xs">
+                                <i class="fa-regular fa-clock"></i> Pendente
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="p-3 text-right">
+                            {% if not os.pagamento or os.pagamento.status != 'CONCLUIDO' %}
+                            <form method="POST" action="{% url 'pagar_os' os.id %}" class="inline-flex items-center gap-1">
+                                {% csrf_token %}
+                                <select name="forma_pagamento" class="text-xs bg-slate-50 border border-slate-300 rounded p-1">
+                                    <option value="PIX">PIX</option>
+                                    <option value="DINHEIRO">Dinheiro</option>
+                                    <option value="CARTAO">Cartão</option>
+                                    <option value="FATURADO">Faturado</option>
+                                </select>
+                                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-bold shadow-sm transition">
+                                    Receber
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-xs text-slate-400 font-medium">Liquidado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="p-8 text-center text-slate-400">
+                            <i class="fa-solid fa-car text-3xl mb-2 text-slate-300"></i>
+                            <p>Nenhum veículo em atendimento no pátio no momento.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+

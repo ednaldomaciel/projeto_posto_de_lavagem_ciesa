@@ -1,0 +1,11 @@
+# Dependências do Projeto Lava Jato do Valmir
+# Framework Web
+Django>=5.1,<6.0
+
+# Gestão de Estáticos em Produção
+whitenoise>=6.5.0
+
+# Variáveis de Ambiente e Configuração
+python-decouple>=3.8
+dj-database-url>=2.1.0
+
