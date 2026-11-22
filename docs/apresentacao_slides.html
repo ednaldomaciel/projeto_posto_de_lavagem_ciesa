@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação de Projeto — Lava Jato do Valmir | CIESA</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            overflow: hidden;
+        }
+        .slide {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            height: calc(100vh - 80px);
+        }
+        .slide.active {
+            display: flex;
+            opacity: 1;
+        }
+        @media print {
+            body {
+                overflow: visible !important;
+                background-color: #ffffff !important;
+                color: #000000 !important;
+            }
+            .slide {
+                display: flex !important;
+                opacity: 1 !important;
+                height: 100vh !important;
+                page-break-after: always !important;
+                background-color: #ffffff !important;
+                color: #0f172a !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+    <!-- Top Progress Bar -->
+    <div class="w-full bg-slate-800 h-1.5 fixed top-0 left-0 z-50">
+        <div id="progressBar" class="bg-gradient-to-r from-blue-500 via-indigo-500 to-emerald-400 h-1.5 transition-all duration-300 w-[10%]"></div>
+    </div>
+
+    <!-- Main Slide Container -->
+    <main class="flex-1 w-full max-w-7xl mx-auto px-6 py-4 flex flex-col justify-center">
+
+        <!-- SLIDE 1: CAPA -->
+        <div class="slide active flex-col justify-center items-center text-center space-y-6" data-index="1">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-900/50 border border-blue-500/30 text-blue-300 text-sm font-semibold tracking-wide">
+                <i class="fa-solid fa-graduation-cap"></i> CENTRO UNIVERSITÁRIO CIESA • CIÊNCIA DA COMPUTAÇÃO
+            </div>
+            <h1 class="text-4xl md:text-6xl font-black tracking-tight text-white max-w-4xl leading-tight">
+                Sistema Web de Gestão Operacional e Controle Financeiro
+            </h1>
+            <p class="text-xl md:text-2xl text-blue-200 font-medium max-w-2xl">
+                Transformação Digital e Transparência na Microempresa <span class="text-emerald-400 font-bold">Lava Jato do Valmir</span>
+            </p>
+            <div class="pt-8 flex flex-col sm:flex-row items-center gap-6 text-slate-300 text-base">
+                <div class="flex items-center gap-3 bg-slate-800/80 px-5 py-2.5 rounded-xl border border-slate-700">
+                    <i class="fa-solid fa-user-gear text-blue-400"></i>
+                    <span>Autor: <strong class="text-white">Ednaldo Maciel da Silva</strong></span>
+                </div>
+                <div class="flex items-center gap-3 bg-slate-800/80 px-5 py-2.5 rounded-xl border border-slate-700">
+                    <i class="fa-solid fa-location-dot text-emerald-400"></i>
+                    <span>Manaus – AM • 2026</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: O CENÁRIO REAL (DIAGNÓSTICO EMPÍRICO) -->
+        <div class="slide flex-col justify-center space-y-4" data-index="2">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">02</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">O Diagnóstico Real: Pátio Analógico In Loco</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Evidência Empírica Primária</span>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                <!-- Coluna da Esquerda: Explicação dos Dados -->
+                <div class="md:col-span-5 space-y-3">
+                    <div class="bg-slate-800/70 p-4 rounded-xl border border-slate-700 space-y-1.5">
+                        <h3 class="text-base font-bold text-blue-300 flex items-center gap-2">
+                            <i class="fa-solid fa-warehouse"></i> 1. O Pátio Físico Operacional
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Boxes de lavagem sob cobertura e alta rotatividade de veículos avulsos e frotas conveniadas no pátio.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-800/70 p-4 rounded-xl border border-slate-700 space-y-1.5">
+                        <h3 class="text-base font-bold text-rose-300 flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-list"></i> 2. A Prancheta dos Lavadores
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Remuneração diária dos 7 lavadores (<strong>Sérgio, Elias, Matheus, Romário, Narciso, Nildo e Oscar</strong>) dependia de somas manuais (`2,00 + 2,00 + 10,00`) com alto risco de rasuras e atritos.
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-800/70 p-4 rounded-xl border border-slate-700 space-y-1.5">
+                        <h3 class="text-base font-bold text-amber-300 flex items-center gap-2">
+                            <i class="fa-solid fa-calculator"></i> 3. Mesa com Calculadora e Fichas
+                        </h3>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            Tiras de papel cortadas na régua preenchidas à mão (<code class="bg-slate-900 px-1 py-0.5 rounded text-blue-300">PLACA/COR/VALOR</code>) e apuradas na calculadora Casio no fim do dia.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Coluna da Direita: Galeria Interativa com as 3 Fotos Reais -->
+                <div class="md:col-span-7 bg-slate-800/50 p-4 rounded-2xl border border-slate-700 flex flex-col space-y-3">
+                    <!-- Seletor de Abas -->
+                    <div class="flex items-center gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700/80 text-xs font-semibold">
+                        <button type="button" onclick="setPhoto(0)" id="photoTab0" class="flex-1 py-1.5 px-3 rounded-lg bg-blue-600 text-white transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-warehouse"></i> 1. Pátio Físico
+                        </button>
+                        <button type="button" onclick="setPhoto(1)" id="photoTab1" class="flex-1 py-1.5 px-3 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-clipboard"></i> 2. Prancheta
+                        </button>
+                        <button type="button" onclick="setPhoto(2)" id="photoTab2" class="flex-1 py-1.5 px-3 rounded-lg text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-calculator"></i> 3. Mesa & Fichas
+                        </button>
+                    </div>
+
+                    <!-- Container da Foto -->
+                    <div class="relative w-full h-72 md:h-80 bg-slate-950 rounded-xl overflow-hidden border border-slate-700 flex items-center justify-center group">
+                        <img id="photoImg" src="img/patio_lavajato_valmir.jpg" alt="Foto do Pátio do Lava Jato do Valmir" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105">
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/30 to-transparent flex flex-col justify-end p-4">
+                            <span id="photoBadge" class="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-full w-max border border-emerald-800">Boxes de Lavagem e Pátio</span>
+                            <p id="photoDesc" class="text-xs text-slate-200 mt-1 font-medium">Estrutura operacional do Lava Jato do Valmir com veículos aguardando atendimento nos boxes cobertos.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: A PROBLEMÁTICA -->
+        <div class="slide flex-col justify-center space-y-6" data-index="3">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold">03</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">As Dores da Operação Analógica</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Gargalos Críticos</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gradient-to-b from-rose-950/40 to-slate-800/80 p-6 rounded-2xl border border-rose-800/30 space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Vulnerabilidade dos Trabalhadores</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Anotações em celular próprio e folhas rasuradas geravam divergências no valor diário das comissões. Desgaste na relação entre administração e equipe.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-b from-amber-950/40 to-slate-800/80 p-6 rounded-2xl border border-amber-800/30 space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Prejuízos com Frotas Faturadas</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Convênios corporativos estipulam no máximo <strong>1 lavagem/semana</strong> por carro. Sem validação instantânea, ocorriam lavagens duplicadas com recusa de faturamento.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-b from-blue-950/40 to-slate-800/80 p-6 rounded-2xl border border-blue-800/30 space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-2xl font-bold">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Lentidão e Fila na Recepção</h3>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Atendimento levava de 3 a 5 minutos por cliente procurando fichas físicas em pastas suspensas e gritando instruções para o pátio.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: A SOLUÇÃO E STACK -->
+        <div class="slide flex-col justify-center space-y-6" data-index="4">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">04</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">A Solução e a Stack Tecnológica</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Arquitetura MVT</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
+                    <i class="fa-brands fa-python text-4xl text-amber-400"></i>
+                    <h3 class="font-bold text-white">Python 3.11+ / Django</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">Padrão MVT com regras de negócio encapsuladas no ORM e segurança robusta nativa.</p>
+                </div>
+                <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
+                    <i class="fa-solid fa-database text-4xl text-blue-400"></i>
+                    <h3 class="font-bold text-white">Banco Híbrido</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">SQLite3 embarcado em DEV para zero setup e PostgreSQL robusto em produção via variáveis de ambiente.</p>
+                </div>
+                <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
+                    <i class="fa-solid fa-mobile-screen-button text-4xl text-emerald-400"></i>
+                    <h3 class="font-bold text-white">Tailwind CSS (CDN)</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">Abordagem Mobile-First no pátio para toque fácil e interface desktop densa na guarita.</p>
+                </div>
+                <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
+                    <i class="fa-solid fa-server text-4xl text-purple-400"></i>
+                    <h3 class="font-bold text-white">Gunicorn & WhiteNoise</h3>
+                    <p class="text-xs text-slate-300 leading-relaxed">Servidor WSGI com compressão Brotli/Gzip para entrega de alta performance sem infraestrutura pesada.</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 flex items-center justify-between text-sm">
+                <span class="text-slate-300"><i class="fa-solid fa-shield-halved text-emerald-400 mr-2"></i> Proteção contra CSRF, XSS, Clickjacking e senhas armazenadas com hash PBKDF2 (720.000 iterações).</span>
+                <span class="bg-emerald-950 text-emerald-300 text-xs px-3 py-1 rounded-full font-bold border border-emerald-800">12-Factor App</span>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: REGRAS DE NEGÓCIO BLINDADAS -->
+        <div class="slide flex-col justify-center space-y-6" data-index="5">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold">05</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Regras de Negócio no Núcleo do Domínio</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Integridade e Validações</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-slate-800/80 p-5 rounded-2xl border-l-4 border-l-rose-500 border border-slate-700 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-white text-lg">RN01: Trava Semanal de Frotas Conveniadas</h3>
+                        <span class="text-xs bg-rose-950 text-rose-300 px-2.5 py-0.5 rounded font-bold border border-rose-800">Crítica</span>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Veículos faturados possuem limite estrito de <strong>1 lavagem por semana</strong>. O método <code class="text-amber-300">pode_lavar_esta_semana()</code> consulta a semana corrente (segunda a domingo) e o método <code class="text-amber-300">clean()</code> bloqueia a persistência com <code class="text-rose-300">ValidationError</code>.
+                    </p>
+                </div>
+
+                <div class="bg-slate-800/80 p-5 rounded-2xl border-l-4 border-l-emerald-500 border border-slate-700 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-white text-lg">RF03: Comissão Dinâmica por Lavador</h3>
+                        <span class="text-xs bg-emerald-950 text-emerald-300 px-2.5 py-0.5 rounded font-bold border border-emerald-800">Transparência</span>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Propriedade calculada <code class="text-amber-300">valor_comissao</code> baseada no percentual individual cadastrado para cada lavador (<code class="text-emerald-300">Comissão = Valor_OS &times; % / 100</code>). Extrato exato sem cálculos manuais.
+                    </p>
+                </div>
+
+                <div class="bg-slate-800/80 p-5 rounded-2xl border-l-4 border-l-blue-500 border border-slate-700 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-white text-lg">RN02: Flexibilidade Temporal de Pagamento</h3>
+                        <span class="text-xs bg-blue-950 text-blue-300 px-2.5 py-0.5 rounded font-bold border border-blue-800">Atendimento</span>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        O cliente pode optar por pagar imediatamente na <strong>Entrada</strong> ou realizar a quitação no ato da <strong>Retirada</strong>. O sistema bloqueia a liberação até que o status conste como Concluído.
+                    </p>
+                </div>
+
+                <div class="bg-slate-800/80 p-5 rounded-2xl border-l-4 border-l-amber-500 border border-slate-700 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-white text-lg">RN03 / RNF05: Controle de Acesso RBAC</h3>
+                        <span class="text-xs bg-amber-950 text-amber-300 px-2.5 py-0.5 rounded font-bold border border-amber-800">Segurança</span>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Fechamento de caixa, relatórios de faturamento e alteração de preços de tabela restritos exclusivamente ao Administrador via decorador <code class="text-amber-300">@user_passes_test(is_admin)</code>.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: MÓDULOS DO SISTEMA -->
+        <div class="slide flex-col justify-center space-y-6" data-index="6">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">06</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Módulos Operacionais Especializados</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Telas em Produção</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 space-y-3">
+                    <div class="flex items-center gap-2 text-blue-400 font-bold text-lg">
+                        <i class="fa-solid fa-desktop"></i> Recepção & Guarita
+                    </div>
+                    <ul class="text-xs text-slate-300 space-y-2">
+                        <li>• Busca instantânea por placa em <strong>menos de 2 segundos</strong> (RNF03).</li>
+                        <li>• Auto-preenchimento dos dados do cliente e histórico.</li>
+                        <li>• Alerta visual imediato caso frota conveniada atinja o limite.</li>
+                        <li>• Emissão de comprovante de atendimento com 1 clique.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 space-y-3">
+                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-lg">
+                        <i class="fa-solid fa-mobile-screen"></i> Painel Móvel do Pátio
+                    </div>
+                    <ul class="text-xs text-slate-300 space-y-2">
+                        <li>• Interface adaptada para smartphones e tablets no pátio.</li>
+                        <li>• Botões táteis grandes (*touch-friendly*) para mãos molhadas.</li>
+                        <li>• Transição direta: <span class="text-amber-300 font-bold">Fila &rarr; Lavagem &rarr; Secagem &rarr; Concluído</span>.</li>
+                        <li>• Timestamp automático de saída para controle de SLA.</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 space-y-3">
+                    <div class="flex items-center gap-2 text-purple-400 font-bold text-lg">
+                        <i class="fa-solid fa-chart-pie"></i> Gestão Financeira (ADM)
+                    </div>
+                    <ul class="text-xs text-slate-300 space-y-2">
+                        <li>• Fechamento diário de caixa consolidado com lucro líquido.</li>
+                        <li>• Extrato individual de comissões por lavador.</li>
+                        <li>• Relatório de clientes faturados com seletor de período.</li>
+                        <li>• Layout otimizado para impressão A4 e exportação PDF.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: TESTES E QUALIDADE -->
+        <div class="slide flex-col justify-center space-y-6" data-index="7">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">07</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Engenharia e Testes Automatizados</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-emerald-950 text-emerald-300 rounded-full font-bold border border-emerald-800">100% Sucesso (10/10)</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <div class="space-y-3">
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        A integridade do sistema é garantida por uma bateria de <strong>10 testes automatizados</strong> implementados com o test-runner do Django:
+                    </p>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex items-center gap-2 p-2.5 bg-slate-800/70 rounded-lg border border-slate-700">
+                            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                            <span>Validação estrita da regra RN01 (bloqueio de faturados duplicados na semana).</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2.5 bg-slate-800/70 rounded-lg border border-slate-700">
+                            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                            <span>Liberação de lavagem para veículos de clientes avulsos sem limite semanal.</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2.5 bg-slate-800/70 rounded-lg border border-slate-700">
+                            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                            <span>Exatidão do cálculo de comissão percentual dos lavadores (RF03).</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2.5 bg-slate-800/70 rounded-lg border border-slate-700">
+                            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                            <span>Proteção de rotas financeiras restritas contra acesso não autorizado (RBAC).</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 font-mono text-xs text-slate-300 space-y-2">
+                    <div class="text-slate-500"># Execução dos testes automatizados</div>
+                    <div class="text-emerald-400">$ python manage.py test lavajato</div>
+                    <div class="text-slate-400">Creating test database for alias 'default'...</div>
+                    <div class="text-slate-400">..........</div>
+                    <div class="text-slate-500">------------------------------------------------------</div>
+                    <div class="text-emerald-300 font-bold">Ran 10 tests in 7.421s</div>
+                    <div class="text-emerald-400 font-black text-sm">OK</div>
+                    <div class="text-slate-500">System check identified no issues (0 silenced).</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: IMPACTO SOCIAL E ODS ONU -->
+        <div class="slide flex-col justify-center space-y-6" data-index="8">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold">08</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Extensão Universitária e ODS da ONU</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Impacto Social Real</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl border border-teal-500/30 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 text-3xl font-black">
+                            8
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">ODS 8: Trabalho Decente</h3>
+                            <span class="text-xs text-amber-300 font-semibold">Crescimento Econômico Sustentável</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Ao garantir que cada lavador receba com exatidão matemática o valor das suas lavagens do dia, sem rasuras e sem descontos indevidos, promove-se transparência e dignidade ao trabalho comissionado.
+                    </p>
+                </div>
+
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-2xl border border-teal-500/30 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400 text-3xl font-black">
+                            9
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-white">ODS 9: Inovação e Infraestrutura</h3>
+                            <span class="text-xs text-blue-300 font-semibold">Indústria e Modernização</span>
+                        </div>
+                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        Democratização do acesso a ferramentas computacionais modernas para microempresas periféricas de Manaus, viabilizando sustentabilidade financeira e retenção de valor no negócio local.
+                    </p>
+                </div>
+            </div>
+
+            <div class="text-center text-xs text-slate-400">
+                Alinhado à Resolução CNE/CES nº 7/2018 (Curricularização da Extensão Universitária).
+            </div>
+        </div>
+
+        <!-- SLIDE 9: RESULTADOS QUANTITATIVOS -->
+        <div class="slide flex-col justify-center space-y-6" data-index="9">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-3">
+                    <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">09</span>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white">Ganhos e Resultados Mensurados</h2>
+                </div>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Antes vs. Depois</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
+                    <div class="text-3xl font-black text-rose-400 line-through">4 min</div>
+                    <div class="text-4xl font-black text-emerald-400">&lt; 45s</div>
+                    <div class="text-xs font-semibold text-slate-300">Tempo de Atendimento na Recepção</div>
+                </div>
+
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
+                    <div class="text-3xl font-black text-rose-400 line-through">Frequente</div>
+                    <div class="text-4xl font-black text-emerald-400">0%</div>
+                    <div class="text-xs font-semibold text-slate-300">Divergências em Comissões de Pátio</div>
+                </div>
+
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
+                    <div class="text-3xl font-black text-rose-400 line-through">Glosas</div>
+                    <div class="text-4xl font-black text-emerald-400">Zero</div>
+                    <div class="text-xs font-semibold text-slate-300">Perdas com Frotas Conveniadas (RN01)</div>
+                </div>
+
+                <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
+                    <div class="text-3xl font-black text-rose-400 line-through">Papéis</div>
+                    <div class="text-4xl font-black text-emerald-400">100%</div>
+                    <div class="text-xs font-semibold text-slate-300">Fluxos Operacionais Digitalizados</div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700 text-center text-sm text-slate-300">
+                <strong class="text-emerald-400">Seu Valmir (Proprietário):</strong> "Agora fecho o dia em 2 minutos e não tenho mais nenhuma confusão com os lavadores na hora de pagar as comissões."
+            </div>
+        </div>
+
+        <!-- SLIDE 10: CONCLUSÃO E AGRADECIMENTOS -->
+        <div class="slide flex-col justify-center items-center text-center space-y-6" data-index="10">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl font-black">
+                <i class="fa-solid fa-flag-checkered"></i>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-black text-white">
+                Obrigado pela Atenção!
+            </h2>
+            <p class="text-lg text-slate-300 max-w-xl">
+                A tecnologia como instrumento prático de cidadania, dignidade no trabalho e transformação regional.
+            </p>
+
+            <div class="p-6 bg-slate-800/60 rounded-2xl border border-slate-700 max-w-lg w-full space-y-3 text-sm text-slate-300 text-left">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-user-graduate text-blue-400 w-5"></i>
+                    <span><strong>Ednaldo Maciel da Silva</strong> — Bacharelado em Ciência da Computação</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-building-columns text-emerald-400 w-5"></i>
+                    <span>Centro Universitário CIESA — Manaus / AM</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <i class="fa-brands fa-github text-purple-400 w-5"></i>
+                    <span>Projeto no GitHub: <code>projeto_posto_de_lavagem_ciesa</code></span>
+                </div>
+            </div>
+
+            <div class="pt-4 text-emerald-400 text-sm font-semibold animate-pulse">
+                Aberto a perguntas da banca e demonstração ao vivo do sistema.
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <footer class="h-16 bg-slate-900 border-t border-slate-800 px-6 flex items-center justify-between z-40 no-print">
+        <div class="flex items-center gap-3 text-xs text-slate-400">
+            <span>Use as teclas <kbd class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200">←</kbd> <kbd class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200">→</kbd> ou <kbd class="px-2 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200">Espaço</kbd></span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <span id="slideCounter" class="text-sm font-semibold text-slate-300">Slide 1 de 10</span>
+            <div class="flex items-center gap-2">
+                <button id="prevBtn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-sm font-medium transition disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-chevron-left mr-1"></i> Anterior
+                </button>
+                <button id="nextBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition">
+                    Próximo <i class="fa-solid fa-chevron-right ml-1"></i>
+                </button>
+                <button onclick="window.print()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition" title="Exportar / Imprimir Slides em PDF">
+                    <i class="fa-solid fa-print"></i>
+                </button>
+                <button id="fsBtn" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition" title="Tela Cheia (F11)">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Navigation Script -->
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const slideCounter = document.getElementById('slideCounter');
+        const progressBar = document.getElementById('progressBar');
+        const fsBtn = document.getElementById('fsBtn');
+
+        let currentIndex = 0;
+        const totalSlides = slides.length;
+
+        function updateSlide(index) {
+            slides.forEach((s, i) => {
+                s.classList.toggle('active', i === index);
+            });
+            slideCounter.textContent = `Slide ${index + 1} de ${totalSlides}`;
+            progressBar.style.width = `${((index + 1) / totalSlides) * 100}%`;
+            prevBtn.disabled = index === 0;
+            if (index === totalSlides - 1) {
+                nextBtn.innerHTML = 'Reiniciar <i class="fa-solid fa-rotate-right ml-1"></i>';
+            } else {
+                nextBtn.innerHTML = 'Próximo <i class="fa-solid fa-chevron-right ml-1"></i>';
+            }
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateSlide(currentIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < totalSlides - 1) {
+                currentIndex++;
+            } else {
+                currentIndex = 0;
+            }
+            updateSlide(currentIndex);
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+                if (currentIndex < totalSlides - 1) {
+                    currentIndex++;
+                    updateSlide(currentIndex);
+                }
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateSlide(currentIndex);
+                }
+            }
+        });
+
+        fsBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                fsBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+            } else {
+                document.exitFullscreen();
+                fsBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+            }
+        });
+
+        updateSlide(currentIndex);
+    </script>
+</body>
+</html>

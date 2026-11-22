@@ -18,7 +18,7 @@
 | **RF05** | **Registrar Ordem de Serviço (OS):** Criar OS vinculando veículo, serviço, lavador por ordem de chegada e atualizar status em tempo real (Fila, Em Lavagem, Secagem, Concluído). | Alta | Entrevista 02 e Observação Direta |
 | **RF06** | **Registrar pagamentos e comprovantes:** Registrar recebimentos flexíveis (Dinheiro, PIX, Cartão) no ato da entrada ou saída e emitir comprovante de atendimento. | Alta | Entrevista 04 e Análise Documental |
 | **RF07** | **Consultar histórico:** Consultar o histórico completo de lavagens, serviços executados e atendimentos por placa ou cliente. | Média | Entrevista 03 (Cliente Faturado) |
-| **RF08** | **Gerar relatórios operacionais e financeiros:** Gerar relatórios de fechamento de caixa diário e comissões para conferência com os lavadores. | Média | Entrevistas 01, 02 e Análise Documental |
+| **RF08** | **Gerar relatórios operacionais, financeiros e cobrança corporativa:** Gerar relatórios segmentados por categorias (fechamento diário por data, consolidado mensal com ticket médio, extrato de comissões por lavador e relatório de faturamento de empresas conveniadas por período escolhido com demonstrativo formal de cobrança para impressão/PDF). | Alta | Entrevistas 01, 02, 03 e Análise Documental |
 
 ---
 

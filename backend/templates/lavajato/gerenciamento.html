@@ -1,142 +1,611 @@
 {% extends 'base.html' %}
 
-{% block title %}Painel de Gestão e Caixa (ADM){% endblock %}
+{% block title %}Painel de Gestão e Relatórios (ADM){% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto p-6 space-y-6">
+<div class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
 
     <!-- Header do Painel -->
     <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-            <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
-                <i class="fa-solid fa-chart-line text-blue-600"></i> Painel de Gestão e Caixa Diário
+            <h2 class="text-xl font-black text-slate-900 flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-blue-600"></i> Central de Gestão & Relatórios Administrativos
             </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Visão consolidada para a administração • <strong>{{ data_atual|date:"d/m/Y" }}</strong></p>
+            <p class="text-xs text-slate-500 mt-0.5">Visão estratégica e fechamento financeiro • <strong>Seu Valmir</strong></p>
         </div>
         <div class="flex items-center gap-2">
             <span class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-1.5 rounded-full border border-amber-300/60 flex items-center gap-1.5">
                 <i class="fa-solid fa-shield-halved"></i> Acesso Restrito: Administrador (RN03)
             </span>
-            <a href="/admin/lavajato/" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3.5 py-1.5 rounded-xl font-semibold transition">
-                <i class="fa-solid fa-sliders"></i> Gerenciar Cadastros
+            <a href="/admin/lavajato/" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3.5 py-1.5 rounded-xl font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-sliders"></i> Django Admin
             </a>
         </div>
     </div>
 
-    <!-- Cards de Indicadores Financeiros do Dia (RF08) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Faturamento Total -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase">Faturamento Diário</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1">R$ {{ faturamento_diario|floatformat:2 }}</h3>
-                <span class="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> Pagamentos liquidados</span>
-            </div>
-            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-                <i class="fa-solid fa-sack-dollar"></i>
-            </div>
-        </div>
-
-        <!-- Total de Lavagens -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase">Lavagens Concluídas</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1">{{ total_lavagens_concluidas }}</h3>
-                <span class="text-[11px] text-slate-500">Veículos finalizados</span>
-            </div>
-            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-                <i class="fa-solid fa-car-side"></i>
-            </div>
-        </div>
-
-        <!-- Comissões a Pagar (RF03) -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase">Comissões (Lavadores)</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1">R$ {{ total_comissoes|floatformat:2 }}</h3>
-                <span class="text-[11px] text-purple-600 font-semibold">Repasse operacional (RF03)</span>
-            </div>
-            <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-                <i class="fa-solid fa-hand-holding-dollar"></i>
-            </div>
-        </div>
-
-        <!-- Lucro Líquido do Dia -->
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-            <div>
-                <p class="text-xs font-semibold text-slate-500 uppercase">Lucro Líquido</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-1">R$ {{ lucro_liquido|floatformat:2 }}</h3>
-                <span class="text-[11px] text-emerald-600 font-semibold">Líquido do posto</span>
-            </div>
-            <div class="w-12 h-12 bg-teal-100 text-teal-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
-                <i class="fa-solid fa-scale-balanced"></i>
-            </div>
-        </div>
+    <!-- Navegação por Categorias de Relatório (Abas) -->
+    <div class="bg-white p-2 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap gap-1 sm:gap-2">
+        <a href="{% url 'gerenciamento' %}?tipo=diario"
+           class="px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition {% if tipo_relatorio == 'diario' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <i class="fa-solid fa-calendar-day"></i> Fechamento Diário
+        </a>
+        <a href="{% url 'gerenciamento' %}?tipo=mensal"
+           class="px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition {% if tipo_relatorio == 'mensal' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <i class="fa-solid fa-calendar-days"></i> Consolidado Mensal
+        </a>
+        <a href="{% url 'gerenciamento' %}?tipo=comissoes"
+           class="px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition {% if tipo_relatorio == 'comissoes' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-100{% endif %}">
+            <i class="fa-solid fa-hand-holding-dollar"></i> Comissões por Lavador
+        </a>
+        <a href="{% url 'gerenciamento' %}?tipo=faturado"
+           class="px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition {% if tipo_relatorio == 'faturado' %}bg-indigo-600 text-white shadow-sm{% else %}text-indigo-900 hover:bg-indigo-50 font-bold{% endif %}">
+            <i class="fa-solid fa-file-invoice-dollar"></i> Faturamento de Empresas (Convênios)
+        </a>
     </div>
 
-    <!-- Seção Dividida: Comissões dos Lavadores & Métodos de Pagamento -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- ===================================================================== -->
+    <!-- ABA 1: RELATÓRIO DIÁRIO (Fechamento de Caixa do Dia) -->
+    <!-- ===================================================================== -->
+    {% if tipo_relatorio == 'diario' %}
+    <div class="space-y-6">
+        <!-- Barra de Filtro de Data -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-3">
+            <form method="GET" action="{% url 'gerenciamento' %}" class="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="tipo" value="diario">
+                <label class="text-xs font-bold uppercase text-slate-600">Data de Consulta:</label>
+                <input type="date" name="data" value="{{ data_selecionada|date:'Y-m-d' }}"
+                       class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm transition">
+                    <i class="fa-solid fa-filter"></i> Filtrar Dia
+                </button>
+            </form>
+            <div class="flex items-center gap-2">
+                <a href="{% url 'imprimir_relatorio' %}?tipo=diario&data={{ data_selecionada|date:'Y-m-d' }}" target="_blank"
+                   class="bg-slate-900 hover:bg-black text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Imprimir Fechamento Diário
+                </a>
+            </div>
+        </div>
 
-        <!-- Tabela de Comissões por Lavador (RF03, RF08) -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-users-gear text-blue-600"></i> Desempenho e Comissões dos Lavadores
+        <!-- Indicadores Financeiros do Dia -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Faturamento Diário</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1 font-mono">R$ {{ faturamento_diario|floatformat:2 }}</h3>
+                    <span class="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> Pagamentos liquidados</span>
+                </div>
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Lavagens Concluídas</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1">{{ total_lavagens }}</h3>
+                    <span class="text-[11px] text-slate-500">Veículos finalizados</span>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-car-side"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Comissões (Lavadores)</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1 font-mono">R$ {{ total_comissoes|floatformat:2 }}</h3>
+                    <span class="text-[11px] text-purple-600 font-semibold">Repasse operacional (RF03)</span>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Lucro Líquido do Dia</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1 font-mono">R$ {{ lucro_liquido|floatformat:2 }}</h3>
+                    <span class="text-[11px] text-teal-600 font-semibold">Líquido do posto</span>
+                </div>
+                <div class="w-12 h-12 bg-teal-100 text-teal-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seções: Comissões dos Lavadores & Formas de Pagamento -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear text-blue-600"></i> Desempenho dos Lavadores no Dia
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-slate-100 text-slate-600 uppercase">
+                            <tr>
+                                <th class="p-2.5 rounded-l-lg">Lavador</th>
+                                <th class="p-2.5 text-center">Taxa (%)</th>
+                                <th class="p-2.5 text-center">Lavagens</th>
+                                <th class="p-2.5 rounded-r-lg text-right">A Receber</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for item in desempenho_lavadores %}
+                            <tr>
+                                <td class="p-2.5 font-semibold text-slate-800">{{ item.lavador.nome }}</td>
+                                <td class="p-2.5 text-center font-mono text-slate-600">{{ item.lavador.percentual_comissao }}%</td>
+                                <td class="p-2.5 text-center font-bold text-blue-600">{{ item.quantidade }}</td>
+                                <td class="p-2.5 text-right font-mono font-bold text-emerald-600">R$ {{ item.comissao|floatformat:2 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="p-4 text-center text-slate-400">Nenhum serviço realizado hoje.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-money-check-dollar text-emerald-600"></i> Formas de Pagamento no Dia
+                </h3>
+                <div class="space-y-2.5">
+                    {% for fp in formas_pgto %}
+                    <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                                <i class="fa-solid fa-wallet"></i>
+                            </span>
+                            <div>
+                                <p class="font-bold text-slate-800 text-xs">{{ fp.forma_pagamento }}</p>
+                                <span class="text-[10px] text-slate-500">{{ fp.qtd }} transações</span>
+                            </div>
+                        </div>
+                        <span class="font-mono font-bold text-slate-800 text-sm">R$ {{ fp.total|floatformat:2 }}</span>
+                    </div>
+                    {% empty %}
+                    <p class="text-xs text-slate-400 p-4 text-center">Nenhum pagamento liquidado no dia selecionado.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabela Completa de Ordens do Dia -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-slate-700"></i> Ordens de Serviço do Dia ({{ data_selecionada|date:'d/m/Y' }})
             </h3>
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-100 text-slate-600 uppercase text-xs">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-600 uppercase text-[11px]">
                         <tr>
-                            <th class="p-3 rounded-l-lg">Lavador</th>
-                            <th class="p-3 text-center">Taxa (%)</th>
-                            <th class="p-3 text-center">Lavagens</th>
-                            <th class="p-3 rounded-r-lg text-right">A Receber</th>
+                            <th class="p-2.5 rounded-l-lg">OS</th>
+                            <th class="p-2.5">Hora</th>
+                            <th class="p-2.5">Veículo / Placa</th>
+                            <th class="p-2.5">Cliente</th>
+                            <th class="p-2.5">Serviço</th>
+                            <th class="p-2.5">Lavador</th>
+                            <th class="p-2.5">Status</th>
+                            <th class="p-2.5">Pagamento</th>
+                            <th class="p-2.5 rounded-r-lg text-right">Valor</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        {% for item in desempenho_lavadores %}
-                        <tr>
-                            <td class="p-3 font-semibold text-slate-800">{{ item.lavador.nome }}</td>
-                            <td class="p-3 text-center font-mono text-slate-600">{{ item.lavador.percentual_comissao }}%</td>
-                            <td class="p-3 text-center font-bold text-blue-600">{{ item.quantidade }}</td>
-                            <td class="p-3 text-right font-mono font-bold text-emerald-600">R$ {{ item.comissao|floatformat:2 }}</td>
+                        {% for os in ordens_dia %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="p-2.5 font-mono font-bold text-slate-800">#{{ os.id|stringformat:"04d" }}</td>
+                            <td class="p-2.5 font-mono text-slate-600">{{ os.data_hora|date:"H:i" }}</td>
+                            <td class="p-2.5 font-semibold text-slate-800">
+                                {{ os.veiculo.marca }} {{ os.veiculo.modelo }}
+                                <span class="bg-slate-800 text-white font-mono text-[10px] px-1.5 py-0.5 rounded font-bold ml-1">{{ os.veiculo.placa }}</span>
+                            </td>
+                            <td class="p-2.5 text-slate-700">{{ os.veiculo.cliente.nome|truncatechars:22 }}</td>
+                            <td class="p-2.5 text-slate-700">{{ os.servico.descricao }}</td>
+                            <td class="p-2.5 text-slate-700 font-medium">{{ os.lavador.nome }}</td>
+                            <td class="p-2.5">
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase {% if os.status == 'CONCLUIDO' %}bg-emerald-100 text-emerald-800{% elif os.status == 'ENTREGUE' %}bg-slate-200 text-slate-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                                    {{ os.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="p-2.5">
+                                {% if os.pagamento and os.pagamento.status == 'CONCLUIDO' %}
+                                <span class="text-emerald-600 font-bold text-[11px]"><i class="fa-solid fa-check"></i> Pago ({{ os.pagamento.forma_pagamento }})</span>
+                                {% else %}
+                                <span class="text-amber-600 font-bold text-[11px]"><i class="fa-regular fa-clock"></i> Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-2.5 text-right font-mono font-bold text-slate-900">
+                                R$ {{ os.valor_total|default:os.servico.valor|floatformat:2 }}
+                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="p-4 text-center text-slate-400">Nenhum lavador com serviços finalizados hoje.</td>
+                            <td colspan="9" class="p-6 text-center text-slate-400">Nenhum atendimento registrado nesta data.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
+    </div>
+    {% endif %}
 
-        <!-- Formas de Pagamento Realizadas -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-money-check-dollar text-emerald-600"></i> Distribuição por Forma de Pagamento
-            </h3>
-            <div class="space-y-3">
-                {% for fp in formas_pgto %}
-                <div class="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <div class="flex items-center gap-2.5">
-                        <span class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                            <i class="fa-solid fa-wallet"></i>
-                        </span>
-                        <div>
-                            <p class="font-bold text-slate-800 text-xs">{{ fp.forma_pagamento }}</p>
-                            <span class="text-[11px] text-slate-500">{{ fp.qtd }} transações</span>
-                        </div>
-                    </div>
-                    <span class="font-mono font-black text-slate-800 text-sm">R$ {{ fp.total|floatformat:2 }}</span>
-                </div>
-                {% empty %}
-                <p class="text-xs text-slate-400 p-4 text-center">Nenhum pagamento liquidado até o momento.</p>
-                {% endfor %}
+
+    <!-- ===================================================================== -->
+    <!-- ABA 2: CONSOLIDADO MENSAL -->
+    <!-- ===================================================================== -->
+    {% if tipo_relatorio == 'mensal' %}
+    <div class="space-y-6">
+        <!-- Barra de Filtro de Mês e Ano -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-3">
+            <form method="GET" action="{% url 'gerenciamento' %}" class="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="tipo" value="mensal">
+                <label class="text-xs font-bold uppercase text-slate-600">Mês de Referência:</label>
+                <select name="mes" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                    {% for m_num, m_nome in meses_nomes %}
+                    <option value="{{ m_num }}" {% if m_num == mes_sel %}selected{% endif %}>{{ m_nome }}</option>
+                    {% endfor %}
+                </select>
+                <label class="text-xs font-bold uppercase text-slate-600">Ano:</label>
+                <select name="ano" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                    {% for a in anos_disponiveis %}
+                    <option value="{{ a }}" {% if a == ano_sel %}selected{% endif %}>{{ a }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm transition">
+                    <i class="fa-solid fa-filter"></i> Filtrar Mês
+                </button>
+            </form>
+            <div class="text-xs text-slate-500 font-medium">
+                Período: <strong>{{ inicio_mes|date:'d/m/Y' }}</strong> a <strong>{{ fim_mes|date:'d/m/Y' }}</strong>
             </div>
         </div>
 
+        <!-- Cards de Indicadores do Mês -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Faturamento Mensal</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1 font-mono">R$ {{ faturamento_mensal|floatformat:2 }}</h3>
+                    <span class="text-[11px] text-emerald-600 font-semibold"><i class="fa-solid fa-calendar-check"></i> Total acumulado</span>
+                </div>
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-money-bill-trend-up"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Lavagens no Mês</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1">{{ total_lavagens }}</h3>
+                    <span class="text-[11px] text-slate-500">Ticket médio: R$ {{ ticket_medio|floatformat:2 }}</span>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-car"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Comissões Pagas</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1 font-mono">R$ {{ total_comissoes|floatformat:2 }}</h3>
+                    <span class="text-[11px] text-purple-600 font-semibold">Repasse aos lavadores</span>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-hand-holding-dollar"></i>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-semibold text-slate-500 uppercase">Lucro Líquido do Mês</p>
+                    <h3 class="text-2xl font-black text-slate-800 mt-1 font-mono">R$ {{ lucro_liquido|floatformat:2 }}</h3>
+                    <span class="text-[11px] text-teal-600 font-semibold">Margem operacional</span>
+                </div>
+                <div class="w-12 h-12 bg-teal-100 text-teal-600 rounded-2xl flex items-center justify-center text-xl shadow-inner">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Desempenho dos Lavadores no Mês -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-users-gear text-blue-600"></i> Desempenho e Produtividade dos Lavadores no Mês
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-600 uppercase">
+                        <tr>
+                            <th class="p-2.5 rounded-l-lg">Lavador</th>
+                            <th class="p-2.5 text-center">Alíquota (%)</th>
+                            <th class="p-2.5 text-center">Total Lavagens</th>
+                            <th class="p-2.5 text-right">Volume de Serviços</th>
+                            <th class="p-2.5 rounded-r-lg text-right">Comissão Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for item in desempenho_lavadores %}
+                        <tr>
+                            <td class="p-2.5 font-bold text-slate-800">{{ item.lavador.nome }}</td>
+                            <td class="p-2.5 text-center font-mono text-slate-600">{{ item.lavador.percentual_comissao }}%</td>
+                            <td class="p-2.5 text-center font-bold text-blue-600">{{ item.quantidade }}</td>
+                            <td class="p-2.5 text-right font-mono text-slate-700">R$ {{ item.total_servicos|floatformat:2 }}</td>
+                            <td class="p-2.5 text-right font-mono font-bold text-emerald-600">R$ {{ item.comissao|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-4 text-center text-slate-400">Nenhum serviço registrado no mês selecionado.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+    {% endif %}
+
+
+    <!-- ===================================================================== -->
+    <!-- ABA 3: RELATÓRIO DE COMISSÕES POR LAVADOR -->
+    <!-- ===================================================================== -->
+    {% if tipo_relatorio == 'comissoes' %}
+    <div class="space-y-6">
+        <!-- Barra de Filtros: Período e Seleção de Lavador -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-3">
+            <form method="GET" action="{% url 'gerenciamento' %}" class="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="tipo" value="comissoes">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-0.5">Data Início:</label>
+                    <input type="date" name="data_inicio" value="{{ data_inicio|date:'Y-m-d' }}"
+                           class="bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-0.5">Data Fim:</label>
+                    <input type="date" name="data_fim" value="{{ data_fim|date:'Y-m-d' }}"
+                           class="bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-0.5">Lavador:</label>
+                    <select name="lavador_id" class="bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                        <option value="">Todos os Lavadores</option>
+                        {% for lav in lavadores_todos %}
+                        <option value="{{ lav.id }}" {% if lavador_id == lav.id|stringformat:'s' %}selected{% endif %}>{{ lav.nome }} ({{ lav.percentual_comissao }}%)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="self-end">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-sm transition">
+                        <i class="fa-solid fa-filter"></i> Filtrar
+                    </button>
+                </div>
+            </form>
+
+            <div class="flex items-center gap-2">
+                <a href="{% url 'imprimir_relatorio' %}?tipo=comissoes&data_inicio={{ data_inicio|date:'Y-m-d' }}&data_fim={{ data_fim|date:'Y-m-d' }}&lavador_id={{ lavador_id|default:'' }}"
+                   target="_blank" class="bg-purple-900 hover:bg-black text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Imprimir Extrato de Comissões
+                </a>
+            </div>
+        </div>
+
+        <!-- Indicadores de Comissões -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Total de Veículos Lavados</p>
+                <p class="text-2xl font-black text-slate-900 mt-1">{{ total_lavagens_periodo }}</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">No período selecionado</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center">
+                <p class="text-xs text-slate-500 uppercase font-semibold">Volume Bruto de Serviços</p>
+                <p class="text-2xl font-black text-blue-700 mt-1 font-mono">R$ {{ total_servicos_periodo|floatformat:2 }}</p>
+                <p class="text-[11px] text-slate-400 mt-0.5">Valor faturado pelos serviços</p>
+            </div>
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 text-center bg-purple-50/60">
+                <p class="text-xs text-purple-800 uppercase font-bold">Total a Repassar em Comissões</p>
+                <p class="text-2xl font-black text-purple-900 mt-1 font-mono">R$ {{ total_comissoes_periodo|floatformat:2 }}</p>
+                <p class="text-[11px] text-purple-700 mt-0.5">Devido aos lavadores</p>
+            </div>
+        </div>
+
+        <!-- Tabela de Resumo por Lavador -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                <i class="fa-solid fa-users text-purple-600"></i> Resumo Consolidado de Repasse
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-600 uppercase">
+                        <tr>
+                            <th class="p-2.5 rounded-l-lg">Lavador</th>
+                            <th class="p-2.5 text-center">Taxa (%)</th>
+                            <th class="p-2.5 text-center">Serviços Executados</th>
+                            <th class="p-2.5 text-right">Faturamento Gerado</th>
+                            <th class="p-2.5 rounded-r-lg text-right">Comissão a Pagar</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for r in resumo_lavadores %}
+                        <tr>
+                            <td class="p-2.5 font-bold text-slate-900">{{ r.lavador.nome }}</td>
+                            <td class="p-2.5 text-center font-mono">{{ r.lavador.percentual_comissao }}%</td>
+                            <td class="p-2.5 text-center font-bold text-blue-600">{{ r.quantidade }}</td>
+                            <td class="p-2.5 text-right font-mono">R$ {{ r.faturamento|floatformat:2 }}</td>
+                            <td class="p-2.5 text-right font-mono font-bold text-emerald-700 text-sm">R$ {{ r.comissao|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="p-4 text-center text-slate-400">Nenhum dado encontrado para o filtro.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+
+    <!-- ===================================================================== -->
+    <!-- ABA 4: FATURAMENTO E COBRANÇA DE EMPRESAS CONVENIADAS (FATURADAS) -->
+    <!-- ===================================================================== -->
+    {% if tipo_relatorio == 'faturado' %}
+    <div class="space-y-6">
+        <!-- Barra de Filtros Avançados: Período, Empresa Conveniada e Status -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-100 pb-3">
+                <div>
+                    <h3 class="font-black text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-file-invoice text-indigo-600"></i> Relatório de Faturamento por Período Escolhido
+                    </h3>
+                    <p class="text-xs text-slate-500">Selecione a empresa conveniada e o período desejado para emitir o demonstrativo de cobrança.</p>
+                </div>
+                <!-- Botão de Impressão Direta em Destaque -->
+                <div>
+                    <a href="{% url 'imprimir_relatorio' %}?tipo=faturado&cliente_id={{ cliente_id|default:'' }}&data_inicio={{ data_inicio|date:'Y-m-d' }}&data_fim={{ data_fim|date:'Y-m-d' }}&status_pgto={{ status_pgto }}"
+                       target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+                        <i class="fa-solid fa-print"></i> Imprimir Fatura / Relatório de Cobrança
+                    </a>
+                </div>
+            </div>
+
+            <form method="GET" action="{% url 'gerenciamento' %}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                <input type="hidden" name="tipo" value="faturado">
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Empresa Conveniada:</label>
+                    <select name="cliente_id" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="">Todas as Empresas Faturadas</option>
+                        {% for emp in empresas_faturadas %}
+                        <option value="{{ emp.id }}" {% if cliente_id == emp.id|stringformat:'s' %}selected{% endif %}>{{ emp.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Data Início:</label>
+                    <input type="date" name="data_inicio" value="{{ data_inicio|date:'Y-m-d' }}"
+                           class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Data Fim:</label>
+                    <input type="date" name="data_fim" value="{{ data_fim|date:'Y-m-d' }}"
+                           class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Status de Cobrança:</label>
+                    <select name="status_pgto" class="w-full bg-slate-50 border border-slate-300 rounded-xl p-2 text-xs font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <option value="TODOS" {% if status_pgto == 'TODOS' %}selected{% endif %}>Todos os Atendimentos</option>
+                        <option value="PENDENTE" {% if status_pgto == 'PENDENTE' %}selected{% endif %}>Apenas Pendentes (A Receber)</option>
+                        <option value="CONCLUIDO" {% if status_pgto == 'CONCLUIDO' %}selected{% endif %}>Apenas Liquidados (Já Pagos)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold p-2.5 rounded-xl text-xs shadow transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-magnifying-glass"></i> Consultar Relatório
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Indicadores da Cobrança Corporativa -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold text-slate-500 uppercase">Empresa Selecionada</p>
+                <h4 class="text-base font-black text-slate-900 mt-1 truncate">
+                    {{ cliente_selecionado.nome|default:'Todas as Frotas Conveniadas' }}
+                </h4>
+                <span class="text-[11px] text-slate-400 font-mono">{{ cliente_selecionado.documento|default:'Consolidado Corporativo' }}</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                <p class="text-xs font-semibold text-slate-500 uppercase">Total de Lavagens</p>
+                <h3 class="text-2xl font-black text-slate-800 mt-1">{{ total_atendimentos }}</h3>
+                <span class="text-[11px] text-slate-500">{{ veiculos_unicos }} veículos atendidos</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 bg-amber-50/60">
+                <p class="text-xs font-bold text-amber-800 uppercase">Saldo a Receber (Pendente)</p>
+                <h3 class="text-2xl font-black text-amber-700 mt-1 font-mono">R$ {{ total_pendente|floatformat:2 }}</h3>
+                <span class="text-[11px] text-amber-700 font-medium">Aguardando liquidação</span>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 bg-indigo-50/60">
+                <p class="text-xs font-bold text-indigo-900 uppercase">Total da Fatura (Período)</p>
+                <h3 class="text-2xl font-black text-indigo-900 mt-1 font-mono">R$ {{ total_faturamento|floatformat:2 }}</h3>
+                <span class="text-[11px] text-indigo-700 font-semibold">Valor total apurado</span>
+            </div>
+        </div>
+
+        <!-- Tabela Detalhada de Atendimentos da Empresa para Faturamento -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-list-ol text-indigo-600"></i> Detalhamento dos Atendimentos para Cobrança
+                </h3>
+                <span class="text-xs bg-indigo-50 text-indigo-800 font-bold px-3 py-1 rounded-full border border-indigo-200">
+                    Período: {{ data_inicio|date:'d/m/Y' }} até {{ data_fim|date:'d/m/Y' }}
+                </span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-slate-100 text-slate-600 uppercase text-[11px]">
+                        <tr>
+                            <th class="p-2.5 rounded-l-lg text-center w-10">OS</th>
+                            <th class="p-2.5">Data / Hora</th>
+                            <th class="p-2.5">Empresa Cliente</th>
+                            <th class="p-2.5">Placa</th>
+                            <th class="p-2.5">Veículo / Modelo</th>
+                            <th class="p-2.5">Serviço Executado</th>
+                            <th class="p-2.5">Lavador</th>
+                            <th class="p-2.5 text-center">Status Cobrança</th>
+                            <th class="p-2.5 rounded-r-lg text-right">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for os in ordens_faturadas %}
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="p-2.5 text-center font-mono font-bold text-slate-800">#{{ os.id|stringformat:"04d" }}</td>
+                            <td class="p-2.5 font-mono text-slate-600">{{ os.data_hora|date:"d/m/Y H:i" }}</td>
+                            <td class="p-2.5 font-semibold text-slate-900">{{ os.veiculo.cliente.nome }}</td>
+                            <td class="p-2.5">
+                                <span class="bg-slate-800 text-white font-mono text-[10px] px-2 py-0.5 rounded font-bold">{{ os.veiculo.placa }}</span>
+                            </td>
+                            <td class="p-2.5 text-slate-800">{{ os.veiculo.marca }} {{ os.veiculo.modelo }}</td>
+                            <td class="p-2.5 text-slate-700">{{ os.servico.descricao }}</td>
+                            <td class="p-2.5 text-slate-600">{{ os.lavador.nome }}</td>
+                            <td class="p-2.5 text-center">
+                                {% if os.pagamento and os.pagamento.status == 'CONCLUIDO' %}
+                                <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Liquidado</span>
+                                {% else %}
+                                <span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-2.5 text-right font-mono font-bold text-slate-900">
+                                R$ {{ os.valor_total|default:os.servico.valor|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="p-8 text-center text-slate-400">
+                                <i class="fa-solid fa-file-invoice text-3xl mb-2 text-slate-300"></i>
+                                <p>Nenhum atendimento corporativo faturado encontrado para os filtros selecionados.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
 </div>
 {% endblock %}
-

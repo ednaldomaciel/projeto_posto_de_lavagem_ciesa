@@ -85,3 +85,61 @@
 * **FA01 - Pagamento Efetuado na Entrada (RN02):**
   1. O pagamento é registrado logo após a execução do **UC02 (Abrir OS)**.
   2. Ao finalizar a lavagem no **UC03**, o sistema identifica que a OS já está quitada e libera o veículo automaticamente para entrega ao cliente.
+
+---
+
+### UC05: Consultar Histórico do Veículo
+
+* **Ator Principal:** Recepcionista, Administrador
+* **Requisito Relacionado:** RF07
+* **Pré-condição:** Usuário autenticado no sistema.
+* **Pós-condição:** Histórico de atendimentos do veículo exibido com datas, serviços e valores.
+
+#### Fluxo Principal
+1. O operador informa a placa do veículo na tela de recepção.
+2. O sistema recupera e exibe todos os atendimentos já realizados para a referida placa.
+3. O operador visualiza o histórico de serviços, datas e o cliente associado.
+
+---
+
+### UC06: Gerar Relatórios Gerenciais, Fechamento de Caixa e Cobrança Corporativa
+
+* **Ator Principal:** Administrador (Seu Valmir)
+* **Requisitos Relacionados:** RF08, RF03, RN01, RN02, RN03
+* **Pré-condição:** Usuário autenticado com perfil de **Administrador**. Tentativas de acesso por recepcionistas ou anônimos são bloqueadas com redirecionamento (RN03).
+* **Pós-condição:** Relatório gerencial gerado na tela com filtros dinâmicos e demonstrativo formal de cobrança emitido para impressão/PDF.
+
+#### Fluxo Principal (Caminho Feliz - Cobrança Corporativa de Empresa Faturada)
+1. O Administrador acessa a aba **Faturamento de Empresas (Convênios)** no Painel de Gestão (`/gerenciamento/?tipo=faturado`).
+2. O Administrador seleciona a **Empresa Conveniada** desejada no catálogo de parceiros.
+3. O Administrador define o **Período de Apuração** informando a *Data Início* e a *Data Fim* do convênio (ex: quinzenal ou mensal).
+4. Opcionalmente, seleciona o status de cobrança (*Todos*, *Apenas Pendentes* ou *Apenas Liquidados*).
+5. O Administrador clica em **Consultar Relatório**.
+6. O sistema processa as Ordens de Serviço do período, calculando o montante total a faturar, quantidade de veículos atendidos, total pendente e lista detalhada das OSs.
+7. O Administrador clica em **Imprimir Fatura / Relatório de Cobrança**.
+8. O sistema renderiza o demonstrativo oficial no endpoint `/gerenciamento/imprimir/?tipo=faturado...` contendo:
+   - Cabeçalho institucional do Lava Jato do Valmir (Razão Social, CNPJ, Telefone, Endereço e Chave PIX).
+   - Dados cadastrais da empresa conveniada (Razão Social, CNPJ/CPF, Telefone).
+   - Tabela detalhada de atendimentos (Data/Hora, Nº OS, Placa, Modelo, Serviço, Lavador e Valor).
+   - Quadro resumo de valores a receber com destaque financeiro.
+   - Instruções formais de pagamento via transferência / PIX com prazo de vencimento.
+   - Campos de assinatura e protocolo para aceite da empresa cliente.
+9. O Administrador aciona a impressão no navegador (ou salva em PDF) para envio e cobrança junto ao setor financeiro da empresa parceira.
+
+#### Fluxos Alternativos
+* **FA01 - Fechamento de Caixa Diário:**
+  1. No passo 1, o Administrador seleciona a aba **Fechamento Diário** (`/gerenciamento/?tipo=diario`).
+  2. O Administrador informa a data de conferência.
+  3. O sistema calcula o faturamento bruto do dia, total de comissões acumuladas, lucro líquido operacional, distribuição por formas de pagamento (PIX, Dinheiro, Cartão) e lista todas as OSs.
+  4. O Administrador emite a folha de conferência de caixa através do botão de impressão diária.
+
+* **FA02 - Consolidado Mensal:**
+  1. No passo 1, o Administrador seleciona a aba **Consolidado Mensal** (`/gerenciamento/?tipo=mensal`).
+  2. O Administrador seleciona o mês e o ano de exercício.
+  3. O sistema apresenta o faturamento acumulado, ticket médio por veículo, despesas com comissões de lavadores e margem líquida do mês.
+
+* **FA03 - Extrato de Comissões por Lavador:**
+  1. No passo 1, o Administrador seleciona a aba **Comissões por Lavador** (`/gerenciamento/?tipo=comissoes`).
+  2. O Administrador seleciona o lavador específico ou todos e o período de apuração.
+  3. O sistema apura o volume de veículos lavados e calcula exatamente a comissão monetária com base na alíquota percentual de cada lavador (RF03).
+  4. O Administrador imprime o extrato com recibo assinado para quitação semanal/mensal com a equipe do pátio.

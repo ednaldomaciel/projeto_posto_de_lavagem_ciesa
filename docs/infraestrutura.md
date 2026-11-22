@@ -1,70 +1,64 @@
 # Especificação de Infraestrutura e Ambientes
+## Sistema de Gestão Operacional e Financeira — Lava Jato do Valmir
 
-**Projeto:** Sistema de Gerenciamento de Posto de Lavagem (Lava Jato do Valmir)  
-**Instituição:** CIESA  
-**Autor:** Ednaldo Maciel da Silva  
-**Data:** Outubro / 2026  
+* **Instituição:** Centro Universitário de Ensino Superior do Amazonas (CIESA) — Manaus/AM  
+* **Curso:** Ciência da Computação  
+* **Autor:** Ednaldo Maciel da Silva  
+* **Data:** Novembro / 2026  
+* **Versão:** 2.0 (Atualizado com Docker, Gunicorn, WhiteNoise e PostgreSQL)
 
 ---
 
 ## 1. Visão Geral de Infraestrutura
 
-A infraestrutura do sistema **Lava Jato do Valmir** foi projetada para garantir simplicidade, leveza no desenvolvimento local e estabilidade operacional no ambiente de produção. A arquitetura adota a estratégia de desacoplamento de configurações via variáveis de ambiente, permitindo transição transparente entre o ambiente de desenvolvimento (local) e o ambiente de produção (nuvem) sem alteração de código-fonte.
+A infraestrutura do sistema **Lava Jato do Valmir** foi projetada para garantir simplicidade e agilidade no desenvolvimento local, combinadas com estabilidade, segurança e integridade transacional no ambiente de produção. 
+
+A arquitetura adota o princípio de desacoplamento de configurações preconizado pelo **Twelve-Factor App**, permitindo que o mesmo código-fonte execute em estações locais de teste ou em contêineres e provedores gerenciados em nuvem alterando exclusivamente variáveis de ambiente (`.env`).
 
 ---
 
 ## 2. Ambientes do Sistema
-┌──────────────────────────────────────┐      ┌──────────────────────────────────────┐
-│     DEV (Ambiente de Desenvolvimento) │      │     PROD (Ambiente de Produção)      │
-├──────────────────────────────────────┤      ├──────────────────────────────────────┤
-│ • OS: Windows / Linux                │      │ • OS: Linux (Ubuntu Server)          │
-│ • Web Server: Django Dev Server      │ ───► │ • Web Server: Gunicorn / Nginx       │
-│ • Database: SQLite3                  │      │ • Database: PostgreSQL               │
-│ • Assets: Django Static Files        │      │ • Assets: WhiteNoise                 │
-│ • Security: DEBUG=True               │      │ • Security: DEBUG=False, SSL/TLS     │
-└──────────────────────────────────────┘      └──────────────────────────────────────┘
-### 2.1. Ambiente de Desenvolvimento (Dev Local)
-* **Finalidade:** Construção de código, execução de testes unitários e prototipagem rápida.
-* **Sistema Operacional Base:** Windows 10/11 ou Linux.
-* **Ambiente Virtual Python:** `venv` isolado para prevenção de conflito de dependências globais.
-* **Linguagem & Framework:** Python 3.11+ / Django 4.2+.
-* **Servidor Web Local:** Django Development Server (`python manage.py runserver`).
-* **Banco de Dados:** **SQLite3** (armazenamento leve em arquivo local sem necessidade de serviço externo).
-* **Logs & Debug:** Habilitados diretamente no terminal (`DEBUG = True`).
-
----
-
-### 2.2. Ambiente de Produção (Prod Nuvem)
-* **Finalidade:** Operação em tempo real no posto de lavagem, atendendo simultaneamente aos operadores da recepção (desktop) e aos lavadores no pátio (mobile/tablet).
-* **Plataforma de Hospedagem (PaaS / VPS):** Render, Fly.io, PythonAnywhere ou VPS Linux Ubuntu Server.
-* **Servidor de Aplicação (WSGI):** **Gunicorn** (Green Unicorn) executando múltiplos *workers* assíncronos.
-* **Gestão de Estáticos:** **WhiteNoise** acoplado ao Django para disponibilizar estilos (Tailwind CSS) e scripts de forma otimizada com compressão gzip/brotli.
-* **Banco de Dados Relacional:** **PostgreSQL** para suporte seguro a acessos concorrentes e garantia de integridade transacional[cite: 1].
-* **Segurança & Criptografia:** Certificado SSL/HTTPS ativo, chaves secretas isoladas e modo de depuração desativado (`DEBUG = False`).
-
----
-
-## 3. Arquivos de Configuração de Dependências e Variáveis
-
-### 3.1. Dependências do Projeto (`requirements.txt`)
-Arquivo responsável por congelar as versões de todas as bibliotecas Python necessárias para execução do sistema:
 
 ```text
-Django>=4.2,<5.0
-gunicorn>=21.2.0
-whitenoise>=6.5.0
-psycopg2-binary>=2.9.6
-python-decouple>=3.8
+┌──────────────────────────────────────┐          ┌──────────────────────────────────────┐
+│  DEV (Ambiente de Desenvolvimento)   │          │     PROD (Ambiente de Produção)      │
+├──────────────────────────────────────┤          ├──────────────────────────────────────┤
+│ • OS: Windows 10/11 ou Linux         │          │ • OS: Linux (Ubuntu Server / Alpine) │
+│ • Web Server: Django Dev Server      │ ───────► │ • Web Server: Gunicorn (3 workers)   │
+│ • Database: SQLite3 (db.sqlite3)     │          │ • Database: PostgreSQL 16 Gerenciado │
+│ • Assets: Django Static Files        │          │ • Assets: WhiteNoise (Brotli/Gzip)   │
+│ • Security: DEBUG=True               │          │ • Security: DEBUG=False, SSL/HTTPS   │
+└──────────────────────────────────────┘          └──────────────────────────────────────┘
+```
 
-Configurações sensíveis e específicas de cada ambiente são isoladas em um arquivo .env (ignorado pelo Git via .gitignore):
+### 2.1. Ambiente de Desenvolvimento (Dev Local)
+* **Finalidade:** Implementação de código, testes unitários automatizados e depuração rápida.
+* **Ambiente Virtual:** Python `venv` isolado.
+* **Linguagem & Framework:** Python 3.11+ e Django 5.x.
+* **Servidor Web:** Django Development Server (`python manage.py runserver`).
+* **Banco de Dados:** **SQLite3** embutido em `backend/db.sqlite3` para zero dependência de instalação prévia de SGBD.
+* **Modo de Depuração:** Habilitado diretamente no terminal (`DEBUG = True`).
 
-# Configurações Gerais
-SECRET_KEY=django-insecure-chave-de-desenvolvimento-local
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
+### 2.2. Ambiente de Produção (Prod Nuvem / Contêiner)
+* **Finalidade:** Operação cotidiana em tempo real no posto de lavagem, atendendo simultaneamente aos operadores da recepção (desktop) e aos lavadores no pátio (mobile/tablet).
+* **Plataforma de Hospedagem (PaaS / VPS):** Render, Railway, Fly.io ou VPS Linux Ubuntu Server.
+* **Servidor de Aplicação (WSGI):** **Gunicorn** (Green Unicorn) executando 3 *workers* assíncronos.
+* **Gestão de Estáticos:** **WhiteNoise** integrado ao pipeline do Django, gerando arquivos cacheados e compactados (`CompressedManifestStaticFilesStorage`).
+* **Banco de Dados Relacional:** **PostgreSQL** para alta concorrência e garantias estritas de integridade ACID.
+* **Segurança & Criptografia:** Certificado SSL/HTTPS ativo, proteção CSRF com `CSRF_TRUSTED_ORIGINS` e modo de depuração desativado (`DEBUG = False`).
 
-# Banco de Dados (Padrão SQLite para Dev)
-DATABASE_URL=sqlite:///db.sqlite3
+---
 
-4. Matriz de Componentes e TecnologiasCamadaTecnologia EscolhidaFunção na InfraestruturaLinguagem / EnginePython 3.11+Execução do núcleo do sistema e regras de negócio[cite: 1].Framework WebDjango 4.2 LTSEstrutura MVT, ORM, autenticação e rotas HTTP[cite: 1].Interface (Frontend)Tailwind CSS (CDN/Build)Estilização utilitária e responsividade mobile/desktop[cite: 1].Servidor WSGI (Prod)GunicornServidor HTTP de alto desempenho para Python.Banco de Dados (Dev)SQLite3Banco embarcado sem necessidade de servidor[cite: 1].Banco de Dados (Prod)PostgreSQLSGBD relacional robusto com alto suporte a concorrência[cite: 1].VersionamentoGit & GitHubControle de versão de código e documentação
+## 3. Matriz de Componentes e Tecnologias
 
+| Camada | Tecnologia Adotada | Função no Sistema |
+| :--- | :--- | :--- |
+| **Linguagem / Runtime** | Python 3.11+ | Execução do núcleo do sistema, regras de domínio e cálculos. |
+| **Framework Web** | Django 5.x | Arquitetura MVT, ORM, autenticação PBKDF2 e rotas HTTP seguras. |
+| **Frontend / UI** | Tailwind CSS (CDN) | Interface responsiva mobile-first com botões táteis no pátio e visualização densa na guarita. |
+| **Servidor WSGI (Prod)** | Gunicorn | Servidor HTTP de alto desempenho e baixa latência para Python. |
+| **Servidor de Estáticos** | WhiteNoise | Distribuição direta e segura de arquivos estáticos sem exigir Nginx dedicado. |
+| **Banco de Dados (Dev)** | SQLite3 | Banco embarcado local para agilidade de desenvolvimento e testes. |
+| **Banco de Dados (Prod)** | PostgreSQL 16 | Banco relacional robusto com alta concorrência e backups transacionais. |
+| **Contêineres** | Docker & Compose | Orquestração reproduzível com 1 comando (`docker compose up -d`). |
+| **Versionamento** | Git & GitHub | Rastreabilidade de código e documentação técnica. |

@@ -19,6 +19,7 @@
 | **ADR-004** | Interface Responsiva com Tailwind CSS (CDN) e Abordagem Mobile-First no Pátio | **Implementado** | Frontend / UI / Usabilidade |
 | **ADR-005** | Controle de Acesso Baseado em Perfis (RBAC) Nativo do Django (RN03 / RNF05) | **Implementado** | Segurança / Autenticação |
 | **ADR-006** | Gestão de Arquivos Estáticos com WhiteNoise e Servidor de Aplicação Gunicorn | **Implementado** | Deploy / Infraestrutura Nuvem |
+| **ADR-007** | Arquitetura de Relatórios Gerenciais e Faturamento Corporativo Print-Friendly | **Implementado** | Módulo de Gestão / Faturamento |
 
 ---
 
@@ -176,4 +177,31 @@ Em ambiente de produção (nuvem em PaaS como Render, Railway ou Fly.io), o serv
   * Performance superior com arquivos compactados e sem overhead de requisições desnecessárias.
 * **Negativas / Mitigações:**
   * O Gunicorn é incompatível com o sistema operacional Windows local, motivo pelo qual o desenvolvimento local utiliza nativamente o servidor embutido `python manage.py runserver`.
+
+---
+
+### ADR-007: Arquitetura de Relatórios Gerenciais e Faturamento Corporativo Print-Friendly
+
+#### 1. Contexto e Problema
+A administração do posto (Seu Valmir) necessita apurar o fluxo financeiro sob diferentes perspectivas operacionais: fechamento de caixa diário, consolidação mensal com ticket médio, extrato de comissões por lavador e, primordialmente, emitir demonstrativos de cobrança e faturamento para empresas conveniadas (`FATURADO`) com filtragem por período arbitrário (quinzenal, mensal, etc.). Além disso, é indispensável que a fatura gerada possa ser impressa em papel ou exportada em PDF com diagramação formal e sem elementos visuais da interface web (botões, menus, barras).
+
+#### 2. Decisão Arquitetural
+1. **Centralização Paramétrica de Relatórios:** Expandir a view `gerenciamento_view` (`/gerenciamento/`) para receber o parâmetro `tipo` (`diario`, `mensal`, `comissoes`, `faturado`), realizando as agregações e filtros diretamente no ORM com queries otimizadas (`select_related`, `Sum`, `Count`).
+2. **Abas Interativas na Interface:** Implementar navegação por abas estilizadas com Tailwind CSS, permitindo alternar instantaneamente entre as categorias de relatório.
+3. **Mecanismo de Impressão Nativo Print-Friendly:** Criar a view `imprimir_relatorio_view` (`/gerenciamento/imprimir/`) associada ao template `relatorio_impressao.html`, aplicando regras de estilo CSS `@media print` no formato padrão folha A4. O template renderiza um demonstrativo mercantil contendo dados do prestador (Lava Jato), dados do tomador (empresa conveniada), tabela discriminada de ordens de serviço, dados bancários/PIX para pagamento e espaço para assinatura e protocolo de aceite mútuo.
+
+#### 3. Alternativas Consideradas
+* **Geração de PDF no Servidor via WeasyPrint ou ReportLab:**
+  * *Motivo da rejeição:* WeasyPrint exige dependências de sistema C pesadas (GTK+, Pango, Cairo) que frequentemente causam quebras de instalação no Windows e incompatibilidades de ambiente. A abordagem print-friendly baseada em HTML/CSS nativo do navegador é 100% portável, leve e permite visualização prévia antes da impressão.
+* **Telas separadas com lógicas desconectadas:**
+  * *Motivo da rejeição:* Fragmentaria a experiência do administrador. A estrutura unificada por abas no módulo de Gestão mantém a coesão do sistema.
+
+#### 4. Consequências
+* **Positivas:**
+  * Zero dependências binárias adicionais no ambiente virtual Python (`venv`).
+  * Geração instantânea de demonstrativos comerciais profissionais prontos para impressão ou salvamento em PDF nativo pelo navegador.
+  * Cobertura completa de testes automatizados com validação de status HTTP 200, contexto e bloqueio de usuários não autorizados (RN03).
+* **Negativas / Mitigações:**
+  * A exportação para PDF depende da funcionalidade "Salvar como PDF" do navegador do cliente, que atualmente é padrão em 100% dos navegadores modernos (Chrome, Edge, Firefox, Safari).
+
 

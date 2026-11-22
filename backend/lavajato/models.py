@@ -19,7 +19,7 @@ class Cliente(models.Model):
     documento = models.CharField('CPF / CNPJ', max_length=25, blank=True, null=True)
     observacoes = models.TextField('Observações', blank=True, null=True)
     ativo = models.BooleanField('Ativo', default=True)
-    data_cadastro = models.DateTimeField('Data de Cadastro', auto_now_add=True)
+    data_cadastro = models.DateTimeField('Data de Cadastro', default=timezone.now)
 
     class Meta:
         verbose_name = 'Cliente'
@@ -138,7 +138,7 @@ class OrdemServico(models.Model):
     status = models.CharField('Status da OS', max_length=30, choices=STATUS_CHOICES, default='FILA')
     observacoes_veiculo = models.TextField('Observações / Vistoria de Entrada', blank=True, null=True, help_text='Riscos, avarias prévias ou itens deixados no veículo')
     valor_total = models.DecimalField('Valor Total (R$)', max_digits=10, decimal_places=2, blank=True, null=True)
-    data_hora = models.DateTimeField('Data e Hora de Entrada', auto_now_add=True)
+    data_hora = models.DateTimeField('Data e Hora de Entrada', default=timezone.now)
     data_hora_saida = models.DateTimeField('Data e Hora de Saída', blank=True, null=True)
 
     class Meta:
@@ -199,7 +199,7 @@ class Pagamento(models.Model):
     momento_pagamento = models.CharField('Momento do Pagamento (RN02)', max_length=20, choices=MOMENTO_CHOICES, default='ENTRADA')
     status = models.CharField('Status do Pagamento', max_length=20, choices=STATUS_CHOICES, default='CONCLUIDO')
     valor_pago = models.DecimalField('Valor Pago (R$)', max_digits=10, decimal_places=2)
-    data_pagamento = models.DateTimeField('Data e Hora do Pagamento', auto_now_add=True)
+    data_pagamento = models.DateTimeField('Data e Hora do Pagamento', default=timezone.now)
 
     class Meta:
         verbose_name = 'Pagamento'

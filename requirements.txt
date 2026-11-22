@@ -9,3 +9,8 @@ whitenoise>=6.5.0
 python-decouple>=3.8
 dj-database-url>=2.1.0
 
+# Servidor de Aplicação WSGI (Produção Linux / Contêineres)
+gunicorn>=21.2.0
+
+# Driver de Conexão com Banco de Dados PostgreSQL (Produção)
+psycopg2-binary>=2.9.9

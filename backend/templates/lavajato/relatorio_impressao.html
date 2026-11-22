@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo_documento }} - Lava Jato do Valmir</title>
+    <!-- Tailwind CSS (via CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            body {
+                background: white !important;
+                color: black !important;
+                font-size: 11pt;
+            }
+            .print-border {
+                border-color: #cbd5e1 !important;
+            }
+            .page-break {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen p-4 sm:p-8">
+
+    <!-- Barra Superior de Controle (Oculta na Impressão) -->
+    <div class="no-print max-w-5xl mx-auto mb-6 flex flex-wrap justify-between items-center bg-slate-900 text-white p-4 rounded-2xl shadow-lg gap-4">
+        <div class="flex items-center gap-3">
+            <a href="{% url 'gerenciamento' %}?tipo={{ tipo }}" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+                <i class="fa-solid fa-arrow-left"></i> Voltar ao Painel
+            </a>
+            <div>
+                <p class="font-bold text-sm">Visualização de Impressão</p>
+                <p class="text-[11px] text-slate-400">Pronto para imprimir ou salvar em PDF (A4)</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md transition flex items-center gap-2">
+                <i class="fa-solid fa-print"></i> Imprimir / Salvar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Folha A4 do Documento Oficial de Cobrança / Relatório -->
+    <div class="max-w-5xl mx-auto bg-white p-8 sm:p-12 rounded-2xl shadow-md border border-slate-200 print:shadow-none print:border-none print:p-0">
+
+        <!-- Cabeçalho do Prestador de Serviços -->
+        <div class="border-b-2 border-slate-900 pb-6 mb-6 flex flex-wrap justify-between items-start gap-4">
+            <div class="flex items-start gap-4">
+                <div class="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md print:border print:border-slate-800">
+                    <i class="fa-solid fa-car-wash"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 tracking-tight">{{ posto_dados.nome }}</h1>
+                    <p class="text-xs font-semibold text-slate-700 uppercase tracking-wide">{{ posto_dados.razao_social }}</p>
+                    <p class="text-xs text-slate-600 mt-0.5">CNPJ: <strong>{{ posto_dados.cnpj }}</strong></p>
+                    <p class="text-xs text-slate-500">{{ posto_dados.endereco }}</p>
+                    <p class="text-xs text-slate-500">Contato: {{ posto_dados.telefone }}</p>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="inline-block bg-slate-900 text-white text-xs font-bold px-3 py-1 rounded uppercase tracking-wider print:border print:border-black">
+                    Doc. Oficial
+                </span>
+                <p class="text-[11px] text-slate-500 mt-2 font-mono">Emissão: {{ emissao_timestamp|date:"d/m/Y H:i" }}</p>
+                <p class="text-[11px] text-slate-400 font-mono">Autenticação: #VALMIR-{{ emissao_timestamp|date:"YmdHis" }}</p>
+            </div>
+        </div>
+
+        <!-- Título do Documento -->
+        <div class="text-center bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 mb-6">
+            <h2 class="text-base font-black text-slate-900 uppercase tracking-wide">{{ titulo_documento }}</h2>
+            {% if data_inicio and data_fim %}
+            <p class="text-xs text-slate-600 font-medium mt-0.5">
+                Período de Apuração: <strong>{{ data_inicio|date:"d/m/Y" }}</strong> até <strong>{{ data_fim|date:"d/m/Y" }}</strong>
+            </p>
+            {% elif data_sel %}
+            <p class="text-xs text-slate-600 font-medium mt-0.5">
+                Data de Referência: <strong>{{ data_sel|date:"d/m/Y" }}</strong>
+            </p>
+            {% endif %}
+        </div>
+
+        <!-- ================================================================= -->
+        <!-- CASO 1: RELATÓRIO DE COBRANÇA DE EMPRESA FATURADA -->
+        <!-- ================================================================= -->
+        {% if tipo == 'faturado' %}
+            
+            <!-- Caixa de Dados do Tomador / Cliente Faturado -->
+            <div class="bg-slate-50/70 border border-slate-200 rounded-xl p-4 mb-6 text-xs">
+                <h3 class="font-bold text-slate-800 uppercase text-[11px] tracking-wider mb-2 flex items-center gap-1.5">
+                    <i class="fa-solid fa-building text-blue-600"></i> Dados da Empresa Conveniada (Tomador dos Serviços)
+                </h3>
+                {% if cliente %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
+                    <div>
+                        <p><span class="text-slate-500 font-medium">Razão Social:</span> <strong class="text-slate-900 text-sm">{{ cliente.nome }}</strong></p>
+                        <p class="mt-1"><span class="text-slate-500 font-medium">CNPJ / CPF:</span> <strong class="font-mono text-slate-900">{{ cliente.documento|default:'Não informado' }}</strong></p>
+                        <p class="mt-1"><span class="text-slate-500 font-medium">Segmentação:</span> <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">{{ cliente.get_tipo_display }}</span></p>
+                    </div>
+                    <div>
+                        <p><span class="text-slate-500 font-medium">Telefone / WhatsApp:</span> <strong>{{ cliente.telefone|default:'Não informado' }}</strong></p>
+                        <p class="mt-1"><span class="text-slate-500 font-medium">Veículos Cadastrados na Frota:</span> <strong>{{ cliente.veiculos.count }}</strong></p>
+                        {% if cliente.observacoes %}
+                        <p class="mt-1 text-slate-500 italic"><span class="font-medium text-slate-700">Condições:</span> {{ cliente.observacoes }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-slate-600 font-medium">Demonstrativo Consolidado de <strong>Todas as Frotas Conveniadas</strong> no período.</p>
+                {% endif %}
+            </div>
+
+            <!-- Tabela Detalhada de Atendimentos -->
+            <div class="overflow-x-auto mb-6">
+                <table class="w-full text-left text-xs border border-slate-200">
+                    <thead class="bg-slate-900 text-white uppercase text-[10px] tracking-wider print:bg-slate-200 print:text-black">
+                        <tr>
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300 text-center w-10">Item</th>
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Data / Hora</th>
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300 text-center">Nº OS</th>
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Placa</th>
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Veículo / Modelo</th>
+                            {% if not cliente %}
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Empresa</th>
+                            {% endif %}
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Serviço Executado</th>
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Lavador</th>
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300 text-center">Status Pgto</th>
+                            <th class="p-2.5 text-right">Valor (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-200">
+                        {% for os in ordens %}
+                        <tr class="{% cycle 'bg-white' 'bg-slate-50' %}">
+                            <td class="p-2.5 border-r border-slate-200 text-center font-mono text-slate-500">{{ forloop.counter }}</td>
+                            <td class="p-2.5 border-r border-slate-200 font-mono text-slate-700">{{ os.data_hora|date:"d/m/Y H:i" }}</td>
+                            <td class="p-2.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">#{{ os.id|stringformat:"04d" }}</td>
+                            <td class="p-2.5 border-r border-slate-200 font-mono font-bold text-slate-900">{{ os.veiculo.placa }}</td>
+                            <td class="p-2.5 border-r border-slate-200 text-slate-800">{{ os.veiculo.marca }} {{ os.veiculo.modelo }}</td>
+                            {% if not cliente %}
+                            <td class="p-2.5 border-r border-slate-200 text-slate-800 font-semibold">{{ os.veiculo.cliente.nome }}</td>
+                            {% endif %}
+                            <td class="p-2.5 border-r border-slate-200 text-slate-700">{{ os.servico.descricao }}</td>
+                            <td class="p-2.5 border-r border-slate-200 text-slate-600">{{ os.lavador.nome }}</td>
+                            <td class="p-2.5 border-r border-slate-200 text-center">
+                                {% if os.pagamento and os.pagamento.status == 'CONCLUIDO' %}
+                                <span class="text-emerald-700 font-bold">Liquidado</span>
+                                {% else %}
+                                <span class="text-amber-700 font-bold">A Faturar</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-2.5 text-right font-mono font-bold text-slate-900">
+                                R$ {{ os.valor_total|default:os.servico.valor|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="p-8 text-center text-slate-400">
+                                Nenhum atendimento faturado registrado no período selecionado.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Resumo e Quadro de Valores para Recebimento -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 text-center">
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Total de Atendimentos</p>
+                    <p class="text-2xl font-black text-slate-900 mt-1">{{ total_atendimentos }}</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">({{ veiculos_unicos }} veículos distintos)</p>
+                </div>
+                <div class="border border-slate-200 rounded-xl p-4 bg-amber-50/70 text-center">
+                    <p class="text-xs text-amber-800 uppercase font-semibold">Saldo a Receber / Pendente</p>
+                    <p class="text-2xl font-black text-amber-700 mt-1 font-mono">R$ {{ total_pendente|floatformat:2 }}</p>
+                    <p class="text-[11px] text-amber-700 mt-0.5">Aguardando liquidação</p>
+                </div>
+                <div class="border-2 border-slate-900 rounded-xl p-4 bg-slate-900 text-white text-center print:bg-slate-100 print:text-black print:border-black">
+                    <p class="text-xs text-slate-300 print:text-slate-700 uppercase font-bold tracking-wider">Valor Total da Fatura</p>
+                    <p class="text-2xl font-black text-white print:text-black mt-1 font-mono">R$ {{ total_faturar|floatformat:2 }}</p>
+                    <p class="text-[11px] text-slate-300 print:text-slate-600 mt-0.5">Líquido a Pagar</p>
+                </div>
+            </div>
+
+            <!-- Instruções de Pagamento e Chave PIX -->
+            <div class="border border-slate-200 rounded-xl p-4 mb-10 bg-slate-50 text-xs text-slate-700">
+                <h4 class="font-bold text-slate-900 uppercase text-[11px] mb-1.5 flex items-center gap-1.5">
+                    <i class="fa-solid fa-qrcode text-emerald-600"></i> Instruções para Pagamento / Transferência
+                </h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <p>Chave PIX (E-mail): <strong class="font-mono text-slate-900">{{ posto_dados.chave_pix }}</strong></p>
+                    <p>Favorecido: <strong>{{ posto_dados.razao_social }}</strong></p>
+                    <p>Banco: <strong>{{ posto_dados.banco }}</strong></p>
+                    <p>Vencimento do Convênio: <strong>Até 5 (cinco) dias úteis após emissão</strong></p>
+                </div>
+            </div>
+
+            <!-- Termo de Aceite e Assinaturas -->
+            <div class="grid grid-cols-2 gap-12 pt-8 border-t border-slate-300 text-center text-xs text-slate-700">
+                <div>
+                    <div class="border-b border-slate-400 pb-8 mb-2"></div>
+                    <p class="font-bold text-slate-900">{{ posto_dados.nome }}</p>
+                    <p class="text-slate-500">Valmir de Souza • Administrador Geral</p>
+                </div>
+                <div>
+                    <div class="border-b border-slate-400 pb-8 mb-2"></div>
+                    <p class="font-bold text-slate-900">
+                        {% if cliente %}{{ cliente.nome }}{% else %}Empresa Conveniada{% endif %}
+                    </p>
+                    <p class="text-slate-500">Protocolo de Recebimento / Responsável Financeiro</p>
+                </div>
+            </div>
+
+        <!-- ================================================================= -->
+        <!-- CASO 2: RELATÓRIO DE FECHAMENTO DIÁRIO -->
+        <!-- ================================================================= -->
+        {% elif tipo == 'diario' %}
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 text-center">
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Total de Atendimentos</p>
+                    <p class="text-2xl font-black text-slate-900 mt-1">{{ total_atendimentos }}</p>
+                </div>
+                <div class="border border-slate-200 rounded-xl p-4 bg-purple-50 text-center">
+                    <p class="text-xs text-purple-700 uppercase font-semibold">Total Comissões</p>
+                    <p class="text-2xl font-black text-purple-800 mt-1 font-mono">R$ {{ total_comissoes|floatformat:2 }}</p>
+                </div>
+                <div class="border border-slate-200 rounded-xl p-4 bg-emerald-50 text-center">
+                    <p class="text-xs text-emerald-700 uppercase font-semibold">Faturamento Bruto</p>
+                    <p class="text-2xl font-black text-emerald-800 mt-1 font-mono">R$ {{ faturamento|floatformat:2 }}</p>
+                </div>
+            </div>
+
+            <table class="w-full text-left text-xs border border-slate-200 mb-8">
+                <thead class="bg-slate-900 text-white uppercase text-[10px]">
+                    <tr>
+                        <th class="p-2 text-center w-12">OS</th>
+                        <th class="p-2">Hora</th>
+                        <th class="p-2">Veículo / Placa</th>
+                        <th class="p-2">Cliente</th>
+                        <th class="p-2">Serviço</th>
+                        <th class="p-2">Lavador</th>
+                        <th class="p-2">Forma Pgto</th>
+                        <th class="p-2 text-right">Valor</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    {% for os in ordens %}
+                    <tr class="{% cycle 'bg-white' 'bg-slate-50' %}">
+                        <td class="p-2 text-center font-mono font-bold">#{{ os.id|stringformat:"04d" }}</td>
+                        <td class="p-2 font-mono">{{ os.data_hora|date:"H:i" }}</td>
+                        <td class="p-2 font-mono font-bold">{{ os.veiculo.placa }}</td>
+                        <td class="p-2">{{ os.veiculo.cliente.nome }}</td>
+                        <td class="p-2">{{ os.servico.descricao }}</td>
+                        <td class="p-2">{{ os.lavador.nome }}</td>
+                        <td class="p-2">{{ os.pagamento.forma_pagamento|default:'Pendente' }}</td>
+                        <td class="p-2 text-right font-mono font-bold">R$ {{ os.valor_total|default:os.servico.valor|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="pt-8 border-t border-slate-300 text-center text-xs text-slate-700">
+                <div class="max-w-xs mx-auto border-b border-slate-400 pb-8 mb-2"></div>
+                <p class="font-bold text-slate-900">Valmir de Souza</p>
+                <p class="text-slate-500">Conferência e Fechamento de Caixa Diário</p>
+            </div>
+
+        <!-- ================================================================= -->
+        <!-- CASO 3: RELATÓRIO DE COMISSÕES DE LAVADORES -->
+        <!-- ================================================================= -->
+        {% elif tipo == 'comissoes' %}
+            <div class="grid grid-cols-3 gap-4 mb-6">
+                <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 text-center">
+                    <p class="text-xs text-slate-500 uppercase font-semibold">Total Atendimentos</p>
+                    <p class="text-2xl font-black text-slate-900 mt-1">{{ total_atendimentos }}</p>
+                </div>
+                <div class="border border-slate-200 rounded-xl p-4 bg-blue-50 text-center">
+                    <p class="text-xs text-blue-700 uppercase font-semibold">Valor dos Serviços</p>
+                    <p class="text-2xl font-black text-blue-800 mt-1 font-mono">R$ {{ total_servicos|floatformat:2 }}</p>
+                </div>
+                <div class="border border-slate-200 rounded-xl p-4 bg-purple-50 text-center">
+                    <p class="text-xs text-purple-700 uppercase font-semibold">Total a Repassar (Comissões)</p>
+                    <p class="text-2xl font-black text-purple-800 mt-1 font-mono">R$ {{ total_comissoes|floatformat:2 }}</p>
+                </div>
+            </div>
+
+            <table class="w-full text-left text-xs border border-slate-200 mb-8">
+                <thead class="bg-slate-900 text-white uppercase text-[10px]">
+                    <tr>
+                        <th class="p-2 text-center w-12">OS</th>
+                        <th class="p-2">Data</th>
+                        <th class="p-2">Lavador</th>
+                        <th class="p-2">Placa</th>
+                        <th class="p-2">Serviço</th>
+                        <th class="p-2 text-right">Valor Serviço</th>
+                        <th class="p-2 text-right">Comissão Devida</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200">
+                    {% for os in ordens %}
+                    <tr class="{% cycle 'bg-white' 'bg-slate-50' %}">
+                        <td class="p-2 text-center font-mono font-bold">#{{ os.id|stringformat:"04d" }}</td>
+                        <td class="p-2 font-mono">{{ os.data_hora|date:"d/m/Y H:i" }}</td>
+                        <td class="p-2 font-bold text-slate-900">{{ os.lavador.nome }}</td>
+                        <td class="p-2 font-mono">{{ os.veiculo.placa }}</td>
+                        <td class="p-2">{{ os.servico.descricao }}</td>
+                        <td class="p-2 text-right font-mono">R$ {{ os.valor_total|default:os.servico.valor|floatformat:2 }}</td>
+                        <td class="p-2 text-right font-mono font-bold text-emerald-700">R$ {{ os.valor_comissao|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="grid grid-cols-2 gap-12 pt-8 border-t border-slate-300 text-center text-xs text-slate-700">
+                <div>
+                    <div class="border-b border-slate-400 pb-8 mb-2"></div>
+                    <p class="font-bold text-slate-900">Valmir de Souza</p>
+                    <p class="text-slate-500">Administrador / Pagador</p>
+                </div>
+                <div>
+                    <div class="border-b border-slate-400 pb-8 mb-2"></div>
+                    <p class="font-bold text-slate-900">
+                        {% if lavador %}{{ lavador.nome }}{% else %}Lavador Responsável{% endif %}
+                    </p>
+                    <p class="text-slate-500">Recibo de Recebimento de Comissão</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Rodapé do Documento -->
+        <div class="mt-10 pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400">
+            Documento gerado eletronicamente através do Sistema de Gestão - Lava Jato do Valmir • Centro Universitário CIESA (2026)
+        </div>
+
+    </div>
+</body>
+</html>

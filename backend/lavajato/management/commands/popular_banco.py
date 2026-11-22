@@ -1,4 +1,6 @@
+import calendar
 from decimal import Decimal
+from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
@@ -6,7 +8,7 @@ from lavajato.models import Cliente, Veiculo, Lavador, Servico, OrdemServico, Pa
 
 
 class Command(BaseCommand):
-    help = 'Popula o banco de dados com dados iniciais e de teste do Lava Jato do Valmir'
+    help = 'Popula o banco de dados com dados iniciais completos de demonstração (Lava Jato do Valmir)'
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.NOTICE('Iniciando carga de dados no banco...'))
@@ -56,7 +58,7 @@ class Command(BaseCommand):
         )
         c2, _ = Cliente.objects.get_or_create(
             nome='Empresa Frota Segura LTDA',
-            defaults={'tipo': 'FATURADO', 'telefone': '(92) 3622-4455', 'documento': '12.345.678/0001-99', 'observacoes': 'Convênio corporativo semanal'}
+            defaults={'tipo': 'FATURADO', 'telefone': '(92) 3622-4455', 'documento': '12.345.678/0001-99', 'observacoes': 'Convênio corporativo semanal / Faturamento quinzenal'}
         )
         c3, _ = Cliente.objects.get_or_create(
             nome='Ana Beatriz Souza',
@@ -64,7 +66,7 @@ class Command(BaseCommand):
         )
         c4, _ = Cliente.objects.get_or_create(
             nome='Transportes & Logística AM',
-            defaults={'tipo': 'FATURADO', 'telefone': '(92) 3234-8899', 'documento': '98.765.432/0001-11', 'observacoes': 'Frota corporativa faturada'}
+            defaults={'tipo': 'FATURADO', 'telefone': '(92) 3234-8899', 'documento': '98.765.432/0001-11', 'observacoes': 'Frota corporativa faturada mensalmente'}
         )
 
         # 3. Veículos (RF02)
@@ -86,9 +88,14 @@ class Command(BaseCommand):
         s4, _ = Servico.objects.get_or_create(descricao='Aplicação de Cera', defaults={'valor': Decimal('30.00'), 'tempo_estimado_minutos': 20, 'ativo': True})
         s5, _ = Servico.objects.get_or_create(descricao='Higienização Interna', defaults={'valor': Decimal('150.00'), 'tempo_estimado_minutos': 120, 'ativo': True})
 
-        # 6. Ordens de Serviço e Pagamentos de Teste
-        if not OrdemServico.objects.exists():
-            # OS 1: Em Fila
+        # 6. Ordens de Serviço e Histórico para Demonstração de Relatórios
+        # Limpa ordens existentes para re-popular dados consistentes se necessário
+        if OrdemServico.objects.count() < 5:
+            OrdemServico.objects.all().delete()
+            agora = timezone.localtime(timezone.now())
+
+            # --- Ordens de hoje ---
+            # OS 1: Em Fila (Avulso)
             os1 = OrdemServico.objects.create(
                 veiculo=v4,
                 servico=s2,
@@ -96,10 +103,11 @@ class Command(BaseCommand):
                 usuario=recep_user,
                 status='FILA',
                 valor_total=s2.valor,
-                observacoes_veiculo='Sem avarias observadas'
+                observacoes_veiculo='Sem avarias observadas',
+                data_hora=agora - timedelta(minutes=45)
             )
 
-            # OS 2: Em Lavagem
+            # OS 2: Em Lavagem (Faturado - Frota Segura)
             os2 = OrdemServico.objects.create(
                 veiculo=v3,
                 servico=s3,
@@ -107,17 +115,19 @@ class Command(BaseCommand):
                 usuario=recep_user,
                 status='LAVAGEM',
                 valor_total=s3.valor,
-                observacoes_veiculo='Veículo com lama na caixa de roda'
+                observacoes_veiculo='Veículo com lama na caixa de roda',
+                data_hora=agora - timedelta(minutes=30)
             )
             Pagamento.objects.create(
                 ordem_servico=os2,
                 forma_pagamento='FATURADO',
                 momento_pagamento='RETIRADA',
                 status='PENDENTE',
-                valor_pago=s3.valor
+                valor_pago=s3.valor,
+                data_pagamento=agora - timedelta(minutes=30)
             )
 
-            # OS 3: Concluída e Paga
+            # OS 3: Concluída e Paga hoje (Avulso - PIX)
             os3 = OrdemServico.objects.create(
                 veiculo=v1,
                 servico=s3,
@@ -125,15 +135,127 @@ class Command(BaseCommand):
                 usuario=recep_user,
                 status='CONCLUIDO',
                 valor_total=s3.valor,
-                observacoes_veiculo='Pequeno risco no para-lama dianteiro esquerdo'
+                observacoes_veiculo='Pequeno risco no para-lama dianteiro esquerdo',
+                data_hora=agora - timedelta(hours=2),
+                data_hora_saida=agora - timedelta(hours=1)
             )
             Pagamento.objects.create(
                 ordem_servico=os3,
                 forma_pagamento='PIX',
                 momento_pagamento='ENTRADA',
                 status='CONCLUIDO',
-                valor_pago=s3.valor
+                valor_pago=s3.valor,
+                data_pagamento=agora - timedelta(hours=2)
             )
 
-        self.stdout.write(self.style.SUCCESS('Banco de dados populado com sucesso!'))
+            # --- Histórico dos dias anteriores para relatórios mensais e de faturamento corporativo ---
+            # OS 4: Frota Segura semana passada (Concluída - Faturado Pendente)
+            data_os4 = agora - timedelta(days=8)
+            os4 = OrdemServico.objects.create(
+                veiculo=v2,
+                servico=s3,
+                lavador=l2,
+                usuario=recep_user,
+                status='ENTREGUE',
+                valor_total=s3.valor,
+                observacoes_veiculo='Higienização de caçamba solicitada',
+                data_hora=data_os4,
+                data_hora_saida=data_os4 + timedelta(minutes=55)
+            )
+            Pagamento.objects.create(
+                ordem_servico=os4,
+                forma_pagamento='FATURADO',
+                momento_pagamento='RETIRADA',
+                status='PENDENTE',
+                valor_pago=s3.valor,
+                data_pagamento=data_os4
+            )
 
+            # OS 5: Frota Segura há 15 dias (Concluída - Faturado)
+            data_os5 = agora - timedelta(days=15)
+            os5 = OrdemServico.objects.create(
+                veiculo=v3,
+                servico=s2,
+                lavador=l1,
+                usuario=recep_user,
+                status='ENTREGUE',
+                valor_total=s2.valor,
+                observacoes_veiculo='Lavagem de rotina de frota',
+                data_hora=data_os5,
+                data_hora_saida=data_os5 + timedelta(minutes=40)
+            )
+            Pagamento.objects.create(
+                ordem_servico=os5,
+                forma_pagamento='FATURADO',
+                momento_pagamento='RETIRADA',
+                status='PENDENTE',
+                valor_pago=s2.valor,
+                data_pagamento=data_os5
+            )
+
+            # OS 6: Transportes & Logística AM há 4 dias (Concluída - Faturado)
+            data_os6 = agora - timedelta(days=4)
+            os6 = OrdemServico.objects.create(
+                veiculo=v5,
+                servico=s5,
+                lavador=l3,
+                usuario=recep_user,
+                status='ENTREGUE',
+                valor_total=s5.valor,
+                observacoes_veiculo='Higienização interna completa de frota',
+                data_hora=data_os6,
+                data_hora_saida=data_os6 + timedelta(hours=2)
+            )
+            Pagamento.objects.create(
+                ordem_servico=os6,
+                forma_pagamento='FATURADO',
+                momento_pagamento='RETIRADA',
+                status='PENDENTE',
+                valor_pago=s5.valor,
+                data_pagamento=data_os6
+            )
+
+            # OS 7: Avulso pago em Dinheiro há 3 dias
+            data_os7 = agora - timedelta(days=3)
+            os7 = OrdemServico.objects.create(
+                veiculo=v4,
+                servico=s2,
+                lavador=l2,
+                usuario=recep_user,
+                status='ENTREGUE',
+                valor_total=s2.valor,
+                observacoes_veiculo='Lavagem rápida',
+                data_hora=data_os7,
+                data_hora_saida=data_os7 + timedelta(minutes=35)
+            )
+            Pagamento.objects.create(
+                ordem_servico=os7,
+                forma_pagamento='DINHEIRO',
+                momento_pagamento='ENTRADA',
+                status='CONCLUIDO',
+                valor_pago=s2.valor,
+                data_pagamento=data_os7
+            )
+
+            # OS 8: Avulso pago em Cartão há 5 dias
+            data_os8 = agora - timedelta(days=5)
+            os8 = OrdemServico.objects.create(
+                veiculo=v1,
+                servico=s3,
+                lavador=l1,
+                usuario=recep_user,
+                status='ENTREGUE',
+                valor_total=s3.valor,
+                data_hora=data_os8,
+                data_hora_saida=data_os8 + timedelta(minutes=50)
+            )
+            Pagamento.objects.create(
+                ordem_servico=os8,
+                forma_pagamento='CARTAO',
+                momento_pagamento='RETIRADA',
+                status='CONCLUIDO',
+                valor_pago=s3.valor,
+                data_pagamento=data_os8
+            )
+
+        self.stdout.write(self.style.SUCCESS('Banco de dados populado com sucesso com histórico completo!'))

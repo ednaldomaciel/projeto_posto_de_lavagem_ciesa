@@ -30,7 +30,7 @@ A arquitetura do sistema **Lava Jato do Valmir** foi projetada para atender tant
 | **RF02** | Cadastro e controle de veículos, placas e segmentação de clientes (Avulso vs Faturado). | Nível 3: `Controlador de Recepção & Camada ORM (Veiculo & Cliente)` |
 | **RF03** | Gestão de lavadores e cálculo automático da comissão por serviço executado. | Nível 3: `Módulo Financeiro & Calculador de Comissões (valor_comissao)` |
 | **RF05 / RNF02** | Acompanhamento do pátio em tempo real e interface responsiva mobile/tablet. | Nível 2 & 3: `Frontend Mobile-First (Tailwind) & Controlador de Pátio` |
-| **RF06 / RF08** | Emissão de OS, comprovantes, fechamento de caixa diário e relatórios operacionais. | Nível 3: `Controlador de Gestão e Dashboard Financeiro` |
+| **RF06 / RF08** | Emissão de OS, comprovantes, fechamento de caixa diário, relatórios mensais, comissões e demonstrativo de faturamento corporativo para cobrança e impressão. | Nível 3: `Controlador de Gestão, Relatórios e Emissor de Faturas Impressas` |
 
 ---
 
@@ -122,7 +122,8 @@ flowchart TD
         ReqLogin["/login/ | /logout/"]
         ReqRecepcao["/recepcao/ (Abertura de OS & Busca)"]
         ReqPatio["/patio/ (Fluxo de Etapas)"]
-        ReqGestao["/gerenciamento/ (Fechamento & Caixa)"]
+        ReqGestao["/gerenciamento/ (Painel de Gestão & Relatórios)"]
+        ReqImprimir["/gerenciamento/imprimir/ (Faturas & Impressão A4)"]
         ReqAdmin["/admin/ (Cadastros Gerais)"]
     end
 
@@ -135,7 +136,9 @@ flowchart TD
         
         PatioCtrl["Controlador do Pátio\n(views.patio_view)\nAtualiza status de OS (Fila -> Lavagem -> Secagem -> Concluído)"]
         
-        GestaoCtrl["Controlador de Gestão Financeira\n(views.gerenciamento_view)\nCalcula faturamento, comissões de lavadores e lucro líquido"]
+        GestaoCtrl["Controlador de Gestão & Relatórios\n(views.gerenciamento_view)\nProcessa filtros diários, mensais, comissões e faturamento por período"]
+
+        PrintEngine["Emissor de Faturas & Relatórios Impressos\n(views.imprimir_relatorio_view)\nRenderiza demonstrativos formais de cobrança e recibos A4"]
         
         BusinessRules["Motor de Regras de Negócio\n(models.OrdemServico.clean & Veiculo.pode_lavar_esta_semana)\nValidação da trava semanal de faturados (RN01) e flexibilidade (RN02)"]
         
@@ -152,18 +155,21 @@ flowchart TD
     ReqRecepcao --> UrlRouter
     ReqPatio --> UrlRouter
     ReqGestao --> UrlRouter
+    ReqImprimir --> UrlRouter
     ReqAdmin --> UrlRouter
 
     UrlRouter --> RBACAuth
     UrlRouter --> RecepcaoCtrl
     UrlRouter --> PatioCtrl
     UrlRouter --> GestaoCtrl
+    UrlRouter --> PrintEngine
 
     RecepcaoCtrl -->|"Consulta restrições de convênio"| BusinessRules
     RecepcaoCtrl -->|"Salva OS / Pagamento inicial"| ORMModels
     PatioCtrl -->|"Atualiza status e registra timestamps"| ORMModels
     GestaoCtrl -->|"Requisita cálculo de repasses"| CommissionEngine
-    GestaoCtrl -->|"Agrega receitas e despesas"| ORMModels
+    GestaoCtrl -->|"Agrega receitas e despesas por filtros"| ORMModels
+    PrintEngine -->|"Carrega itens e dados do conveniado"| ORMModels
 
     BusinessRules -->|"Verifica histórico da semana"| ORMModels
     CommissionEngine -->|"Lê alíquota percentual do lavador"| ORMModels
@@ -199,12 +205,15 @@ Mapeia os caminhos canônicos (`/login/`, `/recepcao/`, `/patio/`, `/gerenciamen
   $$\text{FILA} \longrightarrow \text{LAVAGEM} \longrightarrow \text{SECAGEM} \longrightarrow \text{CONCLUIDO}$$
 * Ao atingir o status `CONCLUIDO`, registra o timestamp `data_hora_saida` e disponibiliza a OS para entrega imediata na recepção.
 
-#### 6. Módulo Financeiro e Calculador de Comissões (`views.gerenciamento_view` e `valor_comissao`)
+#### 6. Módulo de Gestão Financeira, Relatórios e Emissão de Faturas (`views.gerenciamento_view`, `views.imprimir_relatorio_view`)
 * **Implementação dos requisitos:** **RF03**, **RF08**, **RN03**.
-* O cálculo da comissão individual de cada lavador é dinâmico:
-  $$\text{Comissão} = \text{Valor Total da OS} \times \left(\frac{\text{Percentual do Lavador}}{100}\right)$$
-* Agrega o faturamento total diário, calcula o total de comissões acumuladas e apura o lucro líquido operacional do dia:
-  $$\text{Lucro Líquido} = \text{Faturamento Diário} - \sum \text{Comissões}$$
+* O módulo gerencial do sistema é estruturado em quatro categorias especializadas de relatório:
+  1. **Fechamento Diário:** Permite filtrar qualquer dia do calendário, apurando faturamento bruto, volume de lavagens, repasses de comissão e lucro líquido do dia.
+  2. **Consolidado Mensal:** Agrega receitas e despesas por mês e ano, calculando ticket médio por veículo e distribuição das formas de pagamento.
+  3. **Extrato de Comissões por Lavador:** Filtra por período e lavador específico, calculando:
+     $$\text{Comissão} = \text{Valor da OS} \times \left(\frac{\text{Percentual do Lavador}}{100}\right)$$
+  4. **Faturamento de Empresas Conveniadas (Cobrança Corporativa):** Permite selecionar a empresa parceira (`Cliente` do tipo `FATURADO`) e o intervalo de datas (início e fim), gerando o extrato detalhado de todos os veículos da frota lavados no período, saldo já liquidado e total pendente a faturar.
+* **Componente de Impressão (`imprimir_relatorio_view`):** Renderiza demonstrativo comercial formatado para papel A4 e exportação PDF, contendo cabeçalho institucional, dados do tomador, tabela de atendimentos, dados bancários (Chave PIX) e termo de aceite com protocolo de assinatura mútua.
 
 #### 7. Camada ORM (`models.py`)
 Mapeia as 6 entidades fundamentais do banco de dados relacional (`Cliente`, `Veiculo`, `Lavador`, `Servico`, `OrdemServico`, `Pagamento`), assegurando integridade referencial com chaves estrangeiras com regras `PROTECT` e `CASCADE` apropriadas.

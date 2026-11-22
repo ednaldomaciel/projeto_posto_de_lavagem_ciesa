@@ -25,6 +25,16 @@ if DEBUG:
 else:
     ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
 
+# Origens confiáveis para CSRF em produção (obrigatório para formulários HTTPS em PaaS / Domínios)
+CSRF_TRUSTED_ORIGINS = config(
+    'CSRF_TRUSTED_ORIGINS',
+    default='http://localhost,http://127.0.0.1,http://localhost:8000,http://127.0.0.1:8000',
+    cast=Csv()
+)
+
+# Suporte a terminação SSL de proxy reverso (Render, Railway, Fly.io, Nginx)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 
 # Application definition
 

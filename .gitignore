@@ -40,3 +40,7 @@ staticfiles/
 *.swp
 *.swo
 
+# Anotações pessoais para apresentação
+docs/guia_de_estudos_para_apresentacao.md
+docs/roteiro_apresentacao.md
+
