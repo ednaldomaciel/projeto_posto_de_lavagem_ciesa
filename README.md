@@ -1,141 +1,215 @@
-# 🚗 Lava Jato do Valmir - Sistema de Gestão
+# Lava Jato do Valmir
 
-Sistema web desenvolvido para a gestão operacional, atendimento de recepção, controle de pátio e administração financeira de um posto de lavagem automotiva (*Lava Jato do Valmir*).
+Sistema web para gestão operacional e financeira de um posto de lavagem automotiva. O projeto cobre recepção, criação e acompanhamento de ordens de serviço, controle do pátio, pagamentos, comissões, faturamento de clientes corporativos e relatórios.
 
----
+**Instituição:** Centro Universitário de Ensino Superior do Amazonas (CIESA)  
+**Curso:** Ciência da Computação  
+**Autor:** Ednaldo Maciel da Silva
 
-## 👨‍🎓 Informações Acadêmicas & Autor
-* **Projeto:** Trabalho de Conclusão / Sistema de Gestão Aplicado
-* **Instituição:** Centro Universitário de Ensino Superior do Amazonas (CIESA) - Manaus/AM
-* **Autor:** Ednaldo Maciel da Silva
-* **Curso:** Ciência da Computação
+## Funcionalidades
 
----
+- Login com perfis de administrador e recepcionista.
+- Cadastro e consulta de clientes, veículos, lavadores e serviços.
+- Criação e acompanhamento de ordens de serviço.
+- Controle do pátio com os status de fila, lavagem, concluído e entregue.
+- Registro de pagamentos em entrada ou retirada.
+- Cálculo de comissões dos lavadores.
+- Controle de clientes avulsos e faturados.
+- Bloqueio automático de uma segunda lavagem semanal para veículos faturados (RN01).
+- Fechamento diário, consolidado mensal e relatórios faturados por empresa.
+- Relatório preparado para impressão.
+- Painel administrativo do Django.
 
-## 🎯 Sobre o Projeto
-O sistema substitui processos manuais por uma solução digital profissional construída em **Python (Django)**, focando em agilidade no atendimento, controle de comissões de funcionários e cumprimento de regras de negócio específicas da operação (como o limite de lavagens para frotas faturadas - RN01).
+## Tecnologias
 
----
+- Python 3.11+
+- Django 5.1+
+- SQLite em desenvolvimento
+- PostgreSQL em produção
+- WhiteNoise para arquivos estáticos
+- Gunicorn para produção
+- Docker e Docker Compose
+- HTML, Tailwind CSS via CDN e JavaScript
 
-## 🛠️ Tecnologias e Stack Tecnológica
-* **Linguagem:** Python 3.11+ / 3.13
-* **Framework Web:** Django (Padrão MVT)
-* **Frontend / UI:** HTML5, Tailwind CSS (via CDN) e FontAwesome 6
-* **Banco de Dados (Dev):** SQLite3
-* **Banco de Dados (Prod):** PostgreSQL
-* **Servidor de Produção:** Gunicorn & WhiteNoise
-* **Versionamento:** Git e GitHub
-
----
-
-## 📐 Estrutura de Documentação (`docs/`)
-Toda a engenharia de requisitos, modelagem e arquitetura está formalizada na pasta `docs/` do repositório:
-* `docs/projeto_de_extensao_ciesa.md` — **Projeto de Extensão Universitária Oficial (Template CIESA / ABNT)** com diagnóstico de campo, fundamentação teórica, ODS 8/9 e comprovação empírica.
-* `docs/requirements.md` — Requisitos Funcionais (RF01 a RF08) e Não Funcionais (RNF01 a RNF05).
-* `docs/adr.md` — Registro de Decisões Arquiteturais (ADRs: MVT, SQLite/PostgreSQL, RN01 no ORM, Tailwind, RBAC, WhiteNoise e Relatórios/Faturamento Print-Friendly).
-* `docs/arquitetura_e_design.md` — Arquitetura de Software e Diagramas C4 Model (Níveis 1 ao 3).
-* `docs/modelagem.md` — Modelos Conceitual, Lógico e Físico com dicionário de dados.
-* `docs/infraestrutura.md` — Configuração DEV (SQLite) e PROD (Gunicorn, WhiteNoise, PostgreSQL).
-* `docs/guia_de_implantacao.md` — **Guia Prático de Implantação em Produção** (Deploy em Nuvem PaaS, Docker Compose e Instalação Local no Posto).
-* `docs/especificacao_de_caso_de_uso.md` — Casos de uso detalhados (UC01 a UC06).
-* `docs/diagramas_validacao_stakeholders.md` — **Diagramas de Engenharia de Software e Validação com Stakeholders** (Casos de Uso, Estados, Sequência, Classes e Projeto) com renderização Mermaid e arquivos Draw.io.
-* `docs/apresentacao_slides.html` — **Apresentação de Slides Interativa (Slide Deck Web)** pronta para projetar em tela cheia (F11), com navegação por teclado e botão de impressão em PDF.
-* `docs/roteiro_apresentacao.md` — **Roteiro de Fala da Apresentação** detalhado minuto a minuto para banca avaliadora.
-* `docs/guia_de_estudos_para_apresentacao.md` — **Guia Definitivo de Estudos para a Apresentação** (8 pilares técnicos do problema ao deploy, com as 10 perguntas mais difíceis da banca respondidas).
-* `docs/eap.md` & `docs/roadmap.md` — Estrutura Analítica do Projeto e cronograma.
-
----
-
-## 🏢 Arquitetura do Projeto
+## Estrutura do projeto
 
 ```text
 projeto_posto_de_lavagem_ciesa/
-├── backend/                 # Núcleo da Aplicação Django (Unidade Executável)
-│   ├── config/              # Configurações Django (settings.py, urls.py, wsgi.py)
-│   ├── lavajato/            # App Core: Models, Views, Forms, Admin, Tests
-│   │   ├── management/commands/popular_banco.py # Carga inicial de dados
-│   │   ├── admin.py         # Painel administrativo customizado
-│   │   ├── models.py        # Modelos ORM com regras de negócio (RN01, RN02)
-│   │   ├── views.py         # Telas de Recepção, Pátio e Gestão
-│   │   ├── forms.py         # Formulários de OS e Pagamentos
-│   │   └── tests.py         # Testes automatizados das regras
-│   ├── templates/           # Templates oficiais integrados com Tailwind CSS
-│   │   ├── base.html        # Layout padrão e navegação
-│   │   └── lavajato/        # Telas (login, recepcao, patio, gerenciamento, relatorio_impressao)
-│   ├── static/              # Arquivos estáticos customizados
-│   ├── staticfiles/         # Coleta e cache WhiteNoise
-│   └── manage.py            # CLI único e canônico do Django
-├── database/                # Artefatos SQL de referência
-│   ├── schema.sql           # DDL completo do banco de dados relacional
-│   └── seed.sql             # Scripts SQL de carga inicial de referência
-├── diagrams/                # Modelagem e diagramas Draw.io
-├── docs/                    # Documentação de requisitos, arquitetura C4 e ADRs
-├── frontend/                # Artefatos visuais de UI/UX
-│   ├── prototipos/          # Mockups estáticos iniciais
-│   └── README.md            # Documentação dos protótipos
-├── requirements.txt         # Dependências do projeto Python
+├── backend/
+│   ├── config/          # Configurações, URLs, WSGI e ASGI
+│   ├── lavajato/        # Models, views, forms, URLs, testes e comando seed
+│   ├── templates/       # Templates HTML
+│   ├── static/          # Arquivos estáticos da aplicação
+│   └── manage.py
+├── database/
+│   ├── schema.sql       # Esquema SQL de referência
+│   └── seed.sql         # Dados SQL de demonstração
+├── diagrams/            # Diagramas Draw.io
+├── docs/                # Requisitos, arquitetura, implantação e apresentação
+├── frontend/            # Protótipos HTML
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── manage.py            # Execução Django pela raiz do projeto
 └── README.md
 ```
 
----
+## Executar localmente com Python
 
-## 🚀 Como Executar o Projeto em Desenvolvimento (Local)
+### 1. Criar o ambiente virtual
 
-### 1. Clonar o repositório
-```bash
-git clone https://github.com/seu-utilizador/lava-jato-valmir.git
-cd projeto_posto_de_lavagem_ciesa
-```
+No Windows PowerShell:
 
-### 2. Ativar o Ambiente Virtual
-No Windows (PowerShell):
 ```powershell
+py -3.11 -m venv venv
 .\venv\Scripts\Activate.ps1
-```
-No Linux/macOS:
-```bash
-source venv/bin/activate
-```
-
-### 3. Instalar Dependências
-```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Entrar no Diretório da Aplicação Backend
+No Linux/macOS:
+
 ```bash
-cd backend
+python3 -m venv venv
+source venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-### 5. Executar Migrações do Banco de Dados
-```bash
+### 2. Configurar o ambiente
+
+Crie o arquivo `.env` a partir do modelo:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+O arquivo `.env` contém configurações locais e credenciais. Ele não deve ser enviado ao GitHub.
+
+Para desenvolvimento com SQLite, mantenha:
+
+```env
+SECRET_KEY=sua-chave-django-aleatoria
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+CSRF_TRUSTED_ORIGINS=http://localhost,http://127.0.0.1
+DATABASE_URL=sqlite:///db.sqlite3
+```
+
+Altere `sua-chave-django-aleatoria` por uma chave única.
+
+### 3. Criar o banco e os dados iniciais
+
+Na raiz do projeto:
+
+```powershell
 python manage.py migrate
-```
-
-### 6. Carregar Dados de Demonstração (Seed)
-Criará automaticamente usuários de teste, clientes, veículos e catálogo de serviços:
-```bash
 python manage.py popular_banco
 ```
 
-**Credenciais criadas pelo seed:**
-* **Administrador Geral:** Usuário `admin` | Senha `admin123`
-* **Recepcionista:** Usuário `juliana` | Senha `recepcao123`
+Usuários de demonstração criados pelo comando:
 
-### 7. Executar Testes Automatizados (Validação de Regras de Negócio)
-Para validar os requisitos e a trava da regra **RN01 (limite de 1 lavagem/semana para faturados)**:
-```bash
-python manage.py test lavajato
-```
+| Perfil | Usuário | Senha |
+|---|---|---|
+| Administrador | `admin` | `admin123` |
+| Recepção | `juliana` | `recepcao123` |
 
-### 8. Iniciar o Servidor de Desenvolvimento
-```bash
+Essas credenciais são apenas para demonstração. Troque ou remova os usuários padrões antes da implantação real.
+
+### 4. Iniciar o servidor
+
+```powershell
 python manage.py runserver
 ```
 
-Acesse no navegador:
-* **Tela de Acesso / Login:** [http://127.0.0.1:8000/login/](http://127.0.0.1:8000/login/)
-* **Módulo de Recepção e Atendimento:** [http://127.0.0.1:8000/recepcao/](http://127.0.0.1:8000/recepcao/)
-* **Painel do Pátio (Lavadores - Mobile/Tablet):** [http://127.0.0.1:8000/patio/](http://127.0.0.1:8000/patio/)
-* **Painel de Gestão e Caixa (Administrador):** [http://127.0.0.1:8000/gerenciamento/](http://127.0.0.1:8000/gerenciamento/) *(Inclui abas de Fechamento Diário, Consolidado Mensal, Comissões e Cobrança de Convênios Corporativos com Fatura Pronta para Impressão)*
-* **Painel Django Admin:** [http://127.0.0.1:8000/admin/](http://127.0.0.1:8000/admin/)
+Acesse:
+
+- Aplicação: http://127.0.0.1:8000/
+- Login: http://127.0.0.1:8000/login/
+- Recepção: http://127.0.0.1:8000/recepcao/
+- Pátio: http://127.0.0.1:8000/patio/
+- Gerenciamento: http://127.0.0.1:8000/gerenciamento/
+- Administração Django: http://127.0.0.1:8000/admin/
+
+## Executar com Docker
+
+Crie o `.env` a partir do modelo e configure as variáveis:
+
+```env
+SECRET_KEY=sua-chave-django-aleatoria
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1,web
+CSRF_TRUSTED_ORIGINS=http://localhost:8000,http://127.0.0.1:8000
+
+POSTGRES_DB=lavajato_db
+POSTGRES_USER=lavajato_user
+POSTGRES_PASSWORD=sua-senha-forte-do-postgres
+```
+
+Inicie os contêineres:
+
+```powershell
+docker compose up --build
+```
+
+O Docker Compose cria o banco PostgreSQL e inicia a aplicação Django com Gunicorn:
+
+- Aplicação: http://localhost:8000/
+- Banco PostgreSQL: porta `5432`
+
+Para executar em segundo plano:
+
+```powershell
+docker compose up -d --build
+```
+
+Para criar um superusuário no contêiner:
+
+```powershell
+docker compose exec web python manage.py createsuperuser
+```
+
+Para encerrar os contêineres:
+
+```powershell
+docker compose down
+```
+
+Para encerrar os contêineres e remover os dados do banco local:
+
+```powershell
+docker compose down -v
+```
+
+## Executar testes
+
+Na raiz do projeto:
+
+```powershell
+python manage.py test lavajato
+```
+
+Os testes verificam regras de negócio, comissões, pagamentos e relatórios.
+
+## Implantação
+
+As instruções completas para Render, Railway, VPS Linux, Docker e operação local estão em [docs/guia_de_implantacao.md](docs/guia_de_implantacao.md).
+
+Em produção:
+
+- defina `DEBUG=False`;
+- configure uma `SECRET_KEY` única e forte;
+- configure `ALLOWED_HOSTS` e `CSRF_TRUSTED_ORIGINS`;
+- utilize PostgreSQL;
+- não envie `.env`, banco SQLite, ambiente virtual ou credenciais ao GitHub;
+- substitua todas as senhas e usuários de demonstração.
+
+## Documentação
+
+- [Requisitos](docs/requirements.md)
+- [Arquitetura e design](docs/arquitetura_e_design.md)
+- [Modelagem](docs/modelagem.md)
+- [Infraestrutura](docs/infraestrutura.md)
+- [Decisões arquiteturais](docs/adr.md)
+- [Guia de implantação](docs/guia_de_implantacao.md)
+- [Especificação de casos de uso](docs/especificação_de_caso_de_uso.md)
