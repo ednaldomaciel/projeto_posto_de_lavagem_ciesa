@@ -528,6 +528,52 @@
 
     <!-- Interactive Navigation Script -->
     <script>
+        const photos = [
+            {
+                src: 'img/patio_lavajato_valmir.jpg',
+                alt: 'Foto do Pátio do Lava Jato do Valmir',
+                badge: 'Boxes de Lavagem e Pátio',
+                description: 'Estrutura operacional do Lava Jato do Valmir com veículos aguardando atendimento nos boxes cobertos.'
+            },
+            {
+                src: 'img/prancheta_comissoes_lavadores.jpg',
+                alt: 'Prancheta de comissões dos lavadores',
+                badge: 'Controle Manual de Comissões',
+                description: 'Anotações diárias de lavagens e valores dependiam de somas manuais na prancheta dos lavadores.'
+            },
+            {
+                src: 'img/mesa_atendimento_fichas_calculadora.jpg',
+                alt: 'Mesa de atendimento com fichas e calculadora',
+                badge: 'Mesa e Fichas de Atendimento',
+                description: 'Mesa operacional com fichas de atendimento e calculadora utilizadas no registro e fechamento manual.'
+            }
+        ];
+
+        function setPhoto(index) {
+            const photo = photos[index];
+            if (!photo) return;
+
+            const photoImg = document.getElementById('photoImg');
+            const photoBadge = document.getElementById('photoBadge');
+            const photoDesc = document.getElementById('photoDesc');
+
+            photoImg.src = photo.src;
+            photoImg.alt = photo.alt;
+            photoBadge.textContent = photo.badge;
+            photoDesc.textContent = photo.description;
+
+            photos.forEach((_, photoIndex) => {
+                const tab = document.getElementById(`photoTab${photoIndex}`);
+                if (photoIndex === index) {
+                    tab.classList.add('bg-blue-600', 'text-white');
+                    tab.classList.remove('text-slate-400');
+                } else {
+                    tab.classList.remove('bg-blue-600', 'text-white');
+                    tab.classList.add('text-slate-400');
+                }
+            });
+        }
+
         const slides = document.querySelectorAll('.slide');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
