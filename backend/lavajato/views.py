@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
-from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
@@ -18,15 +17,6 @@ def login_view(request):
         return redirect(request.GET.get('next', 'recepcao'))
 
     if request.method == 'POST':
-        # Suporte a botão de login rápido para testes
-        quick_user = request.POST.get('quick_user')
-        if quick_user in ['admin', 'juliana']:
-            user = User.objects.filter(username=quick_user).first()
-            if user:
-                auth_login(request, user)
-                messages.success(request, f"Conectado com sucesso como {user.get_full_name() or user.username}!")
-                return redirect(request.POST.get('next') or request.GET.get('next') or 'recepcao')
-
         usuario = request.POST.get('username')
         senha = request.POST.get('password')
         user = authenticate(request, username=usuario, password=senha)

@@ -47,41 +47,6 @@
             </button>
         </form>
 
-        <!-- Divisor para Acesso Rápido de Demonstração -->
-        <div class="relative my-6">
-            <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
-            <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-semibold">Ou Acesso Rápido de Teste</span></div>
-        </div>
-
-        <!-- Botões de Login em 1 Clique (Facilitador para Apresentação CIESA) -->
-        <div class="grid grid-cols-2 gap-3">
-            <form method="POST" action="{% url 'login' %}">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ next }}">
-                <input type="hidden" name="quick_user" value="admin">
-                <button type="submit" class="w-full bg-slate-900 hover:bg-black text-white p-2.5 rounded-xl text-xs font-semibold flex flex-col items-center gap-1 transition shadow-sm">
-                    <i class="fa-solid fa-shield-halved text-amber-400 text-sm"></i>
-                    <span>Seu Valmir</span>
-                    <span class="text-[10px] text-slate-400">(Administrador)</span>
-                </button>
-            </form>
-
-            <form method="POST" action="{% url 'login' %}">
-                {% csrf_token %}
-                <input type="hidden" name="next" value="{{ next }}">
-                <input type="hidden" name="quick_user" value="juliana">
-                <button type="submit" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 p-2.5 rounded-xl text-xs font-semibold flex flex-col items-center gap-1 transition border border-slate-200">
-                    <i class="fa-solid fa-headset text-blue-600 text-sm"></i>
-                    <span>Juliana</span>
-                    <span class="text-[10px] text-slate-500">(Recepção)</span>
-                </button>
-            </form>
-        </div>
-
-        <p class="text-[11px] text-center text-slate-400 mt-6">
-            Credenciais de teste: <code>admin / admin123</code> | <code>juliana / recepcao123</code>
-        </p>
-
     </div>
 </div>
 {% endblock %}
