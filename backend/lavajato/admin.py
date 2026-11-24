@@ -1,6 +1,13 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Cliente, Veiculo, Lavador, Servico, OrdemServico, Pagamento
+from .models import EmpresaFaturada, Cliente, Veiculo, Lavador, Servico, OrdemServico, Pagamento
+
+
+@admin.register(EmpresaFaturada)
+class EmpresaFaturadaAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'documento', 'telefone', 'ativo', 'data_cadastro')
+    list_filter = ('ativo',)
+    search_fields = ('nome', 'documento', 'telefone', 'email')
 
 
 class VeiculoInline(admin.TabularInline):
@@ -10,9 +17,9 @@ class VeiculoInline(admin.TabularInline):
 
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'tipo_badge', 'telefone', 'documento', 'total_veiculos', 'ativo', 'data_cadastro')
-    list_filter = ('tipo', 'ativo')
-    search_fields = ('nome', 'documento', 'telefone')
+    list_display = ('nome', 'tipo_badge', 'empresa_faturada', 'telefone', 'documento', 'total_veiculos', 'ativo', 'data_cadastro')
+    list_filter = ('tipo', 'empresa_faturada', 'ativo')
+    search_fields = ('nome', 'documento', 'telefone', 'empresa_faturada__nome')
     inlines = [VeiculoInline]
 
     @admin.display(description='Tipo')

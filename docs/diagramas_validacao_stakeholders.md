@@ -6,7 +6,7 @@
 * **Autor:** Ednaldo Maciel da Silva  
 * **Data:** Novembro / 2026  
 * **Versão:** 2.0 (Atualizado e compatibilizado com a implementação Django, regras de negócio e validações em campo)  
-* **Localização dos arquivos editáveis:** [`diagrams/`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/diagrams/)
+* **Localização dos arquivos editáveis:** [`diagrams/`](../diagrams/)
 
 ---
 
@@ -15,8 +15,8 @@
 Os diagramas técnicos deste projeto foram utilizados como **instrumentos de diálogo, alinhamento e homologação** entre o desenvolvedor e os atores reais do negócio (*stakeholders*), capturados durante a pesquisa-ação e entrevistas semiestruturadas no pátio do estabelecimento:
 
 1. **Seu Valmir (Proprietário e Administrador):** Validou as travas de convênios corporativos (**RN01**), a restrição de alteração de preços e fechamento de caixa (**RN03**) e a consolidação de relatórios financeiros e comissões (**RF08**).
-2. **Recepcionista (Operadora da Guarita):** Validou o fluxo de busca ágil por placa, a emissão de comprovantes de entrada e a flexibilidade no momento de cobrança na entrada ou saída (**RN02**).
-3. **Equipe de Lavadores do Pátio (Sérgio, Elias, Matheus, Romário, Narciso, Nildo e Oscar):** Validaram o ciclo de vida dos veículos no pátio (*Fila &rarr; Lavagem &rarr; Secagem &rarr; Concluído*), o acompanhamento via dispositivo móvel (**RNF02**) e a fórmula de apuração individual de comissão percentual (**RF03**).
+2. **Recepcionista (Operadora da Guarita):** O fluxo previsto inclui busca por placa e abertura da OS. Não há comprovante individual de entrada implementado.
+3. **Equipe de Lavadores do Pátio:** O quadro acompanha os estados *Fila &rarr; Lavagem &rarr; Secagem &rarr; Concluído &rarr; Entregue* e registra a data/hora de saída na entrega.
 4. **Clientes Faturados (Gestores de Frotas Conveniadas):** Validaram a regra de bloqueio semanal estrito de 1 lavagem por veículo (**RN01**) e a emissão do espelho de faturamento mensal auditável.
 
 ---
@@ -25,7 +25,7 @@ Os diagramas técnicos deste projeto foram utilizados como **instrumentos de di�
 
 O Diagrama de Casos de Uso delimita a fronteira do sistema e especifica as interações entre os quatro atores do ecossistema e as funcionalidades da plataforma.
 
-*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_caso_de_uso.drawio`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/diagrams/diagrama_de_caso_de_uso.drawio)
+*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_caso_de_uso.drawio`](../diagrams/diagrama_de_caso_de_uso.drawio)
 
 ### Representação Visual (Mermaid)
 
@@ -43,8 +43,8 @@ flowchart LR
         UC02(["UC02: Abrir Ordem de Serviço\n(RF05)"])
         UC_RN01(["<<extend>>\nValidar Limite Semanal RN01\n(Faturado <= 1x/semana)"])
         UC03(["UC03: Atualizar Status no Pátio\n(RF05, RNF02)"])
-        UC04(["UC04: Registrar Pagamento\n(Entrada/Retirada - RF06, RN02)"])
-        UC05(["UC05: Consultar Histórico por Placa\n(RF07)"])
+        UC04(["UC04: Registrar Pagamento Avulso\n(RF06, RN02)"])
+        UC05(["UC05: Consultar Histórico por Placa\n(RF07 - não implementado)"])
         UC06(["UC06: Fechar Caixa e Comissões\n(RF03, RF08, RN03)"])
         UC07(["UC07: Gerenciar Tabela de Preços e Acessos\n(RF01, RF04, RN03)"])
     end
@@ -67,9 +67,9 @@ flowchart LR
 ```
 
 ### Validações Conduzidas
-* **Seu Valmir:** Homologou que os casos de uso **UC06** (fechamento de caixa e conferência de comissões) e **UC07** (alteração de tabela de preços e gestão de usuários) são de acesso estrito e exclusivo do Administrador via perfil RBAC (**RN03**).
-* **Recepcionista:** Homologou que a abertura de OS (**UC02**) integra a busca automática de clientes já cadastrados (**UC01**) em uma única tela.
-* **Lavadores:** Homologaram que a única ação necessária em seu aplicativo é transicionar o status da lavagem (**UC03**) em tempo real.
+* O gerenciamento e a impressão exigem perfil administrativo. A recepção e o pátio exigem autenticação, mas não têm separação por grupos.
+* A tela de recepção busca a placa e permite selecionar o veículo antes de abrir a OS; o histórico completo por placa não está implementado.
+* As mudanças de status aparecem na resposta/atualização da página; não há atualização por WebSocket ou mecanismo push.
 
 ---
 
@@ -77,7 +77,7 @@ flowchart LR
 
 Modela os estados operacionais pelos quais um veículo e sua respectiva Ordem de Serviço transitam desde a entrada na recepção até a liberação final no pátio, conectando o fluxo físico com a liquidação financeira (**RN02**).
 
-*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_estado.drawio`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/diagrams/diagrama_de_estado.drawio)
+*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_estado.drawio`](../diagrams/diagrama_de_estado.drawio)
 
 ### Representação Visual (Mermaid)
 
@@ -85,9 +85,6 @@ Modela os estados operacionais pelos quais um veículo e sua respectiva Ordem de
 stateDiagram-v2
     [*] --> FILA : Abertura da OS (RF05) [RN01: Faturado <= 1x/semana]
     
-    FILA --> CANCELADA : Desistência pré-início do serviço
-    CANCELADA --> [*]
-
     state "FILA\n(Aguardando Box)" as FILA
     state "LAVAGEM\n(No Box de Lavagem)" as LAVAGEM
     state "SECAGEM\n(Área de Secagem/Cera)" as SECAGEM
@@ -96,35 +93,38 @@ stateDiagram-v2
 
     FILA --> LAVAGEM : Lavador assume o veículo no pátio
     LAVAGEM --> SECAGEM : Conclusão de água e xampu
-    SECAGEM --> CONCLUIDO : Finalização do acabamento [data_hora_saida = now()]
+    SECAGEM --> CONCLUIDO : Finalização do acabamento
     
-    CONCLUIDO --> ENTREGUE : [Pagamento = CONCLUIDO (RN02)] / Liberação ao Cliente
+    CONCLUIDO --> ENTREGUE : Registrar entrega ao cliente [data_hora_saida = now()]
     ENTREGUE --> [*]
 
     note right of FILA
-        Regra RN02 (Opção 1):
-        Pagamento pode ser quitado
-        imediatamente na Entrada.
+        Clientes avulsos podem pagar
+        na entrada ou depois.
+        Clientes faturados são lançados
+        à empresa vinculada sem pagar
+        no atendimento.
     end note
 
     note right of CONCLUIDO
-        Regra RN02 (Opção 2):
-        Pagamento pendente deve ser
-        quitado no ato da Retirada.
+        A entrega física e o status
+        financeiro são independentes.
+        A OS faturada pode ser entregue
+        ainda pendente para a empresa.
     end note
 ```
 
 ### Validações Conduzidas
 * **Lavadores do Pátio:** Validaram a necessidade de separar a etapa de lavagem bruta com água/xampu (`LAVAGEM`) da etapa de acabamento/cera/aspiração (`SECAGEM`), pois isso permite liberar o box molhado para o próximo veículo da fila.
-* **Recepcionista e Seu Valmir:** Validaram que um carro com status `CONCLUIDO` só transiciona para `ENTREGUE` se o registro de pagamento estiver com `status = 'CONCLUIDO'`, impedindo que veículos saiam do pátio sem quitação financeira.
+* O fluxo implementado não exige pagamento concluído para mudar de `CONCLUIDO` para `ENTREGUE`; clientes faturados são entregues sem pagamento no atendimento.
 
 ---
 
 ## 4. Diagrama de Sequência (UML Sequence Diagram)
 
-Detalha as mensagens síncronas e assíncronas trocadas entre os atores, controladores, modelos de domínio e persistência durante o processo de atendimento, validação de regras de convênio e quitação.
+Detalha as mensagens HTTP síncronas entre os operadores, as views, os modelos e o banco durante o atendimento. Não há integração assíncrona nem gateway de pagamento externo.
 
-*Arquivo Draw.io correspondente:* [`diagrams/diagrama_sequencia.drawio`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/diagrams/diagrama_sequencia.drawio)
+*Arquivo Draw.io correspondente:* [`diagrams/diagrama_sequencia.drawio`](../diagrams/diagrama_sequencia.drawio)
 
 ### Representação Visual (Mermaid)
 
@@ -148,38 +148,41 @@ sequenceDiagram
     alt Veículo Faturado já lavou na semana corrente
         Veiculo-->>View: Retorna (False, "Limite semanal atingido")
         View-->>Recepcao: Exibe Alerta Vermelho de Bloqueio RN01
-        Recepcao-->>Cliente: Notifica restrição contratual (permite apenas pagamento avulso)
+        Recepcao-->>Cliente: Informa o bloqueio; não converte automaticamente para atendimento avulso
     else Permitido ou Cliente Avulso
         Veiculo-->>View: Retorna (True, "")
         View-->>Recepcao: Renderiza formulário preenchido com dados do veículo
         
-        Recepcao->>View: Seleciona Serviço, Lavador e Momento Pgto (RN02)
+        Recepcao->>View: Seleciona serviço e lavador
         
-        opt RN02: Pagamento Realizado na Entrada
-            Recepcao->>View: Registra Pagamento(forma='PIX', status='CONCLUIDO')
+        alt Cliente avulso
+            opt Pagamento imediato
+                Recepcao->>View: Registra pagamento (PIX/Dinheiro/Cartão)
+            end
+        else Cliente faturado
+            View->>View: Lança valor pendente para empresa vinculada
         end
 
         View->>OS: Salva OrdemServico(status='FILA', valor_total=valor)
-        OS-->>View: Confirma persistência ACID (gera número da OS)
-        View-->>Recepcao: Emite Comprovante de Entrada do Atendimento
-        Recepcao-->>Cliente: Entrega via impressa / digital
-        
-        Note over OS,Lavador: Fluxo no Pátio Físico
-        Lavador->>View: Acessa fila em /patio/ via smartphone
-        Lavador->>OS: Atualiza status: FILA -> LAVAGEM -> SECAGEM -> CONCLUIDO
-        
-        opt RN02: Pagamento na Retirada
-            Cliente->>Recepcao: Solicita retirada do veículo
-            Recepcao->>View: Quita Pagamento(status='CONCLUIDO')
+        OS-->>View: Confirma persistência e gera número da OS
+        View->>View: Cria pagamento avulso ou lançamento FATURADO pendente
+
+        Note over OS,Lavador: Operador atualiza o quadro por requisições HTTP
+        Lavador->>View: Atualiza status em /patio/
+        View->>OS: Atualiza FILA -> LAVAGEM -> SECAGEM -> CONCLUIDO -> ENTREGUE
+        OS-->>View: Registra data_hora_saida ao marcar ENTREGUE
+
+        opt Cliente avulso deixou pagamento pendente
+            Recepcao->>View: Registra pagamento pendente posteriormente
         end
-        
-        Recepcao->>Cliente: Entrega veículo liberado (status='ENTREGUE')
+
+        Recepcao->>Cliente: Entrega veículo; pagamento não é pré-condição
     end
 ```
 
 ### Validações Conduzidas
-* **Cliente de Frota Faturada:** Validou que o sistema bloqueia instantaneamente a tentativa de realizar lavagens excedentes no ato do atendimento, protegendo a empresa parceira contra faturas com cobranças imprevistas.
-* **Recepcionista:** Homologou que o fluxo é contínuo e leva menos de 45 segundos por veículo, eliminando a consulta de papéis em pastas físicas.
+* Para veículos faturados, a recepção bloqueia nova OS quando a regra semanal não permite. O sistema não oferece exceção nem conversão automática para cliente avulso.
+* O tempo de atendimento inferior a 45 segundos é uma meta e não possui medição documentada.
 
 ---
 
@@ -187,7 +190,7 @@ sequenceDiagram
 
 Representa a estrutura estrutural das classes do domínio de negócio levantadas nas sessões de elicitação, suas propriedades fundamentais e multiplicidades relacionais.
 
-*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_classe_conceitual.drawio`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/diagrams/diagrama_de_classe_conceitual.drawio)
+*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_classe_conceitual.drawio`](../diagrams/diagrama_de_classe_conceitual.drawio)
 
 ### Representação Visual (Mermaid)
 
@@ -195,6 +198,7 @@ Representa a estrutura estrutural das classes do domínio de negócio levantadas
 classDiagram
     class Cliente {
         +Integer id
+        +EmpresaFaturada empresa_faturada
         +String nome
         +String tipo
         +String telefone
@@ -207,7 +211,7 @@ classDiagram
         +Integer id
         +String placa
         +String modelo
-        +String marca
+        +String marca opcional
         +String cor
         +String tipo_veiculo
         +pode_lavar_esta_semana() Boolean
@@ -249,16 +253,17 @@ classDiagram
         +DateTime data_pagamento
     }
 
-    Cliente "1" --> "1..*" Veiculo : possui
+    EmpresaFaturada "0..1" --> "0..*" Cliente : fatura (obrigatoria se FATURADO)
+    Cliente "1" --> "0..*" Veiculo : possui
     Veiculo "1" --> "0..*" OrdemServico : recebe
     Servico "1" --> "0..*" OrdemServico : compõe
     Lavador "1" --> "0..*" OrdemServico : executa
-    OrdemServico "1" <--> "1" Pagamento : liquida
+    OrdemServico "1" <--> "0..1" Pagamento : registra
 ```
 
 ### Validações Conduzidas
 * **Seu Valmir:** Homologou que a comissão do lavador não é fixa em valor monetário bruto, mas sim uma alíquota percentual (`percentual_comissao`) calculada dinamicamente sobre o valor do serviço executado (**RF03**).
-* **Equipe do Posto:** Homologou que as formas de pagamento suportadas atendem ao cotidiano do estabelecimento: `PIX`, `DINHEIRO`, `CARTAO` e `FATURADO`.
+* Para OS faturadas, o registro financeiro usa `forma_pagamento='FATURADO'` e `status='PENDENTE'`; a tela não oferece pagamento imediato.
 
 ---
 
@@ -266,7 +271,7 @@ classDiagram
 
 Descreve a estrutura técnica de implementação em código, demonstrando o baixo acoplamento e a alta coesão entre a Camada View, Camada Form e Camada Model (ORM) do Django.
 
-*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_classe_projeto.drawio`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/diagrams/diagrama_de_classe_projeto.drawio)
+*Arquivo Draw.io correspondente:* [`diagrams/diagrama_de_classe_projeto.drawio`](../diagrams/diagrama_de_classe_projeto.drawio)
 
 ### Representação Visual (Mermaid)
 

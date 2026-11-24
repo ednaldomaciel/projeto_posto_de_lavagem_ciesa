@@ -96,18 +96,16 @@
                 <h3 class="font-bold text-slate-800 uppercase text-[11px] tracking-wider mb-2 flex items-center gap-1.5">
                     <i class="fa-solid fa-building text-blue-600"></i> Dados da Empresa Conveniada (Tomador dos Serviços)
                 </h3>
-                {% if cliente %}
+                {% if empresa %}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
                     <div>
-                        <p><span class="text-slate-500 font-medium">Razão Social:</span> <strong class="text-slate-900 text-sm">{{ cliente.nome }}</strong></p>
-                        <p class="mt-1"><span class="text-slate-500 font-medium">CNPJ / CPF:</span> <strong class="font-mono text-slate-900">{{ cliente.documento|default:'Não informado' }}</strong></p>
-                        <p class="mt-1"><span class="text-slate-500 font-medium">Segmentação:</span> <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-bold">{{ cliente.get_tipo_display }}</span></p>
+                        <p><span class="text-slate-500 font-medium">Razão Social:</span> <strong class="text-slate-900 text-sm">{{ empresa.nome }}</strong></p>
+                        <p class="mt-1"><span class="text-slate-500 font-medium">CNPJ:</span> <strong class="font-mono text-slate-900">{{ empresa.documento|default:'Não informado' }}</strong></p>
                     </div>
                     <div>
-                        <p><span class="text-slate-500 font-medium">Telefone / WhatsApp:</span> <strong>{{ cliente.telefone|default:'Não informado' }}</strong></p>
-                        <p class="mt-1"><span class="text-slate-500 font-medium">Veículos Cadastrados na Frota:</span> <strong>{{ cliente.veiculos.count }}</strong></p>
-                        {% if cliente.observacoes %}
-                        <p class="mt-1 text-slate-500 italic"><span class="font-medium text-slate-700">Condições:</span> {{ cliente.observacoes }}</p>
+                        <p><span class="text-slate-500 font-medium">Telefone / WhatsApp:</span> <strong>{{ empresa.telefone|default:'Não informado' }}</strong></p>
+                        {% if empresa.observacoes %}
+                        <p class="mt-1 text-slate-500 italic"><span class="font-medium text-slate-700">Condições:</span> {{ empresa.observacoes }}</p>
                         {% endif %}
                     </div>
                 </div>
@@ -126,8 +124,8 @@
                             <th class="p-2.5 border-r border-slate-800 print:border-slate-300 text-center">Nº OS</th>
                             <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Placa</th>
                             <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Veículo / Modelo</th>
-                            {% if not cliente %}
-                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Empresa</th>
+                            {% if not empresa %}
+                            <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Empresa Faturada</th>
                             {% endif %}
                             <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Serviço Executado</th>
                             <th class="p-2.5 border-r border-slate-800 print:border-slate-300">Lavador</th>
@@ -142,9 +140,9 @@
                             <td class="p-2.5 border-r border-slate-200 font-mono text-slate-700">{{ os.data_hora|date:"d/m/Y H:i" }}</td>
                             <td class="p-2.5 border-r border-slate-200 text-center font-mono font-bold text-slate-900">#{{ os.id|stringformat:"04d" }}</td>
                             <td class="p-2.5 border-r border-slate-200 font-mono font-bold text-slate-900">{{ os.veiculo.placa }}</td>
-                            <td class="p-2.5 border-r border-slate-200 text-slate-800">{{ os.veiculo.marca }} {{ os.veiculo.modelo }}</td>
-                            {% if not cliente %}
-                            <td class="p-2.5 border-r border-slate-200 text-slate-800 font-semibold">{{ os.veiculo.cliente.nome }}</td>
+                            <td class="p-2.5 border-r border-slate-200 text-slate-800">{% if os.veiculo.marca %}{{ os.veiculo.marca }} {% endif %}{{ os.veiculo.modelo }}</td>
+                            {% if not empresa %}
+                            <td class="p-2.5 border-r border-slate-200 text-slate-800 font-semibold">{{ os.veiculo.cliente.empresa_faturada.nome }}</td>
                             {% endif %}
                             <td class="p-2.5 border-r border-slate-200 text-slate-700">{{ os.servico.descricao }}</td>
                             <td class="p-2.5 border-r border-slate-200 text-slate-600">{{ os.lavador.nome }}</td>
@@ -212,7 +210,7 @@
                 <div>
                     <div class="border-b border-slate-400 pb-8 mb-2"></div>
                     <p class="font-bold text-slate-900">
-                        {% if cliente %}{{ cliente.nome }}{% else %}Empresa Conveniada{% endif %}
+                        {% if empresa %}{{ empresa.nome }}{% else %}Empresa Conveniada{% endif %}
                     </p>
                     <p class="text-slate-500">Protocolo de Recebimento / Responsável Financeiro</p>
                 </div>

@@ -11,10 +11,10 @@
 
                 <!-- Classe Cliente -->
                 <mxCell id="c_cliente" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#eff6ff;strokeColor=#3b82f6;fontColor=#1e3a8a;" value="Cliente" vertex="1">
-                    <mxGeometry x="60" y="80" width="220" height="170" as="geometry"/>
+                    <mxGeometry x="60" y="80" width="220" height="190" as="geometry"/>
                 </mxCell>
-                <mxCell id="c_cli_attrs" parent="c_cliente" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" value="+ id: Integer [PK]&#xa;+ nome: String&#xa;+ tipo: String ('AVULSO' | 'FATURADO')&#xa;+ telefone: String&#xa;+ documento: String&#xa;+ observacoes: Text&#xa;+ ativo: Boolean&#xa;+ data_cadastro: DateTime" vertex="1">
-                    <mxGeometry y="26" width="220" height="144" as="geometry"/>
+                <mxCell id="c_cli_attrs" parent="c_cliente" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" value="+ id: Integer [PK]&#xa;+ empresa_faturada_id: Integer [FK, opcional]&#xa;+ nome: String&#xa;+ tipo: String ('AVULSO' | 'FATURADO')&#xa;+ telefone: String&#xa;+ documento: String&#xa;+ observacoes: Text&#xa;+ ativo: Boolean&#xa;+ data_cadastro: DateTime" vertex="1">
+                    <mxGeometry y="26" width="220" height="164" as="geometry"/>
                 </mxCell>
 
                 <!-- Classe Veiculo -->
@@ -41,11 +41,19 @@
                     <mxGeometry y="26" width="230" height="134" as="geometry"/>
                 </mxCell>
 
+                <!-- Classe Empresa Faturada -->
+                <mxCell id="c_empresa" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#eff6ff;strokeColor=#3b82f6;fontColor=#1e3a8a;" value="EmpresaFaturada" vertex="1">
+                    <mxGeometry x="840" y="300" width="230" height="170" as="geometry"/>
+                </mxCell>
+                <mxCell id="c_empresa_attrs" parent="c_empresa" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;" value="+ id: Integer [PK]&#xa;+ nome: String [UNIQUE]&#xa;+ documento: String&#xa;+ telefone: String&#xa;+ email: String&#xa;+ ativo: Boolean&#xa;+ data_cadastro: DateTime" vertex="1">
+                    <mxGeometry y="26" width="230" height="144" as="geometry"/>
+                </mxCell>
+
                 <!-- Classe OrdemServico -->
                 <mxCell id="c_os" parent="1" style="swimlane;fontStyle=1;align=center;verticalAlign=top;childLayout=stackLayout;horizontal=1;startSize=26;fillColor=#f8fafc;strokeColor=#475569;fontColor=#0f172a;" value="OrdemServico" vertex="1">
                     <mxGeometry x="430" y="310" width="270" height="230" as="geometry"/>
                 </mxCell>
-                <mxCell id="c_os_attrs" parent="c_os" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" value="+ id: Integer [PK]&#xa;+ veiculo_id: Integer [FK]&#xa;+ servico_id: Integer [FK]&#xa;+ lavador_id: Integer [FK]&#xa;+ usuario_id: Integer [FK]&#xa;+ status: String (FILA|LAVAGEM|...)&#xa;+ observacoes_veiculo: Text&#xa;+ valor_total: Decimal&#xa;+ data_hora: DateTime&#xa;+ data_hora_saida: DateTime&#xa;---------------------------------&#xa;+ valor_comissao: Decimal (RF03)" vertex="1">
+                <mxCell id="c_os_attrs" parent="c_os" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=6;spacingRight=6;overflow=hidden;rotatable=0;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;" value="+ id: Integer [PK]&#xa;+ veiculo_id: Integer [FK]&#xa;+ servico_id: Integer [FK]&#xa;+ lavador_id: Integer [FK]&#xa;+ usuario_id: Integer [FK]&#xa;+ status: FILA|LAVAGEM|SECAGEM&#xa;  | CONCLUIDO|ENTREGUE&#xa;+ observacoes_veiculo: Text&#xa;+ valor_total: Decimal&#xa;+ data_hora: DateTime&#xa;+ data_hora_saida: DateTime (ao entregar)&#xa;---------------------------------&#xa;+ valor_comissao: Decimal (RF03)" vertex="1">
                     <mxGeometry y="26" width="270" height="204" as="geometry"/>
                 </mxCell>
 
@@ -62,7 +70,7 @@
                     <mxGeometry relative="1" as="geometry"><mxPoint as="offset"/><mxPoint x="170" y="250" as="sourcePoint"/><mxPoint x="170" y="340" as="targetPoint"/></mxGeometry>
                 </mxCell>
                 <mxCell id="m_cli_1" parent="assoc_cli_veic" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;" value="1" vertex="1"><mxGeometry x="-0.8" relative="1" as="geometry"/></mxCell>
-                <mxCell id="m_veic_n" parent="assoc_cli_veic" style="text;strokeColor=none;fillColor=none;align=right;fontSize=10;" value="1..*" vertex="1"><mxGeometry x="0.8" relative="1" as="geometry"/></mxCell>
+                <mxCell id="m_veic_n" parent="assoc_cli_veic" style="text;strokeColor=none;fillColor=none;align=right;fontSize=10;" value="0..*" vertex="1"><mxGeometry x="0.8" relative="1" as="geometry"/></mxCell>
 
                 <mxCell id="assoc_veic_os" edge="1" parent="1" source="c_veiculo" target="c_os" style="endArrow=none;html=1;strokeColor=#3b82f6;strokeWidth=1.5;">
                     <mxGeometry relative="1" as="geometry"><mxPoint x="280" y="420" as="sourcePoint"/><mxPoint x="430" y="420" as="targetPoint"/></mxGeometry>
@@ -86,7 +94,21 @@
                     <mxGeometry relative="1" as="geometry"><mxPoint x="565" y="540" as="sourcePoint"/><mxPoint x="565" y="630" as="targetPoint"/></mxGeometry>
                 </mxCell>
                 <mxCell id="m_os_pag_1" parent="assoc_os_pag" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;" value="1" vertex="1"><mxGeometry x="-0.8" relative="1" as="geometry"/></mxCell>
-                <mxCell id="m_pag_1" parent="assoc_os_pag" style="text;strokeColor=none;fillColor=none;align=right;fontSize=10;" value="1" vertex="1"><mxGeometry x="0.8" relative="1" as="geometry"/></mxCell>
+                <mxCell id="m_pag_1" parent="assoc_os_pag" style="text;strokeColor=none;fillColor=none;align=right;fontSize=10;" value="0..1" vertex="1"><mxGeometry x="0.8" relative="1" as="geometry"/></mxCell>
+
+                <mxCell id="assoc_empresa_cliente" edge="1" parent="1" source="c_empresa" target="c_cliente" style="endArrow=none;html=1;strokeColor=#3b82f6;strokeWidth=1.5;edgeStyle=orthogonalEdgeStyle;rounded=0;">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="840" y="380" as="sourcePoint"/>
+                        <mxPoint x="280" y="150" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="1140" y="380"/>
+                            <mxPoint x="1140" y="50"/>
+                            <mxPoint x="280" y="50"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="m_empresa_clientes" parent="assoc_empresa_cliente" style="text;strokeColor=none;fillColor=none;align=left;fontSize=10;" value="0..1" vertex="1"><mxGeometry x="-0.8" relative="1" as="geometry"/></mxCell>
+                <mxCell id="m_clientes_empresa" parent="assoc_empresa_cliente" style="text;strokeColor=none;fillColor=none;align=right;fontSize=10;" value="0..*" vertex="1"><mxGeometry x="0.8" relative="1" as="geometry"/></mxCell>
             </root>
         </mxGraphModel>
     </diagram>

@@ -1,5 +1,35 @@
 from django import forms
-from .models import OrdemServico, Veiculo, Cliente, Servico, Lavador, Pagamento
+from .models import EmpresaFaturada, OrdemServico, Veiculo, Cliente, Servico, Lavador, Pagamento
+
+
+class ClienteCadastroForm(forms.ModelForm):
+    class Meta:
+        model = Cliente
+        fields = ['nome', 'tipo', 'empresa_faturada', 'telefone', 'documento', 'observacoes']
+        widgets = {
+            'nome': forms.TextInput(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+            'tipo': forms.Select(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+            'empresa_faturada': forms.Select(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+            'telefone': forms.TextInput(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+            'documento': forms.TextInput(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+            'observacoes': forms.Textarea(attrs={'rows': 2, 'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['empresa_faturada'].queryset = EmpresaFaturada.objects.filter(ativo=True)
+
+
+class VeiculoCadastroForm(forms.ModelForm):
+    class Meta:
+        model = Veiculo
+        fields = ['placa', 'modelo', 'cor', 'tipo_veiculo']
+        widgets = {
+            'placa': forms.TextInput(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-mono uppercase', 'placeholder': 'Ex: ABC1D23'}),
+            'modelo': forms.TextInput(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+            'cor': forms.TextInput(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+            'tipo_veiculo': forms.Select(attrs={'class': 'w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm'}),
+        }
 
 
 class OrdemServicoForm(forms.ModelForm):

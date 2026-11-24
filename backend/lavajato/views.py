@@ -5,10 +5,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.urls import reverse
 from django.utils import timezone
 from django.db.models import Sum, Count, Q
-from .models import OrdemServico, Veiculo, Lavador, Servico, Pagamento, Cliente
-from .forms import OrdemServicoForm, PagamentoForm
+from .models import OrdemServico, Veiculo, Lavador, Servico, Pagamento, Cliente, EmpresaFaturada
+from .forms import ClienteCadastroForm, VeiculoCadastroForm, OrdemServicoForm, PagamentoForm
 
 
 def login_view(request):
@@ -50,6 +51,8 @@ def recepcao_view(request):
     """
     termo_placa = request.GET.get('placa', '').strip().upper().replace('-', '')
     veiculo_selecionado = None
+    veiculo_confirmado = request.GET.get('selecionar') == '1'
+    pode_abrir_os = False
     alerta_rn01 = None
 
     if termo_placa:
@@ -62,45 +65,87 @@ def recepcao_view(request):
                     'titulo': 'Bloqueio de Regra RN01 (Limite Semanal Excedido):',
                     'mensagem': motivo
                 }
-            elif veiculo_selecionado.cliente.tipo == 'FATURADO':
-                alerta_rn01 = {
-                    'tipo': 'info',
-                    'titulo': 'Cliente Conveniado / Faturado:',
-                    'mensagem': 'Veículo apto. Nenhuma lavagem registrada para esta frota na semana corrente.'
-                }
+            else:
+                pode_abrir_os = True
+                if veiculo_selecionado.cliente.tipo == 'FATURADO':
+                    alerta_rn01 = {
+                        'tipo': 'info',
+                        'titulo': 'Cliente Conveniado / Faturado:',
+                        'mensagem': 'Veículo apto. Nenhuma lavagem registrada para esta frota na semana corrente.'
+                    }
         else:
-            messages.warning(request, f"Placa '{termo_placa}' não cadastrada. Cadastre o veículo no Admin ou selecione abaixo.")
+            messages.warning(request, f"Placa '{termo_placa}' não cadastrada. Use o cadastro rápido de cliente e veículo.")
 
     if request.method == 'POST':
-        form = OrdemServicoForm(request.POST)
-        if form.is_valid():
-            try:
-                os = form.save(commit=False)
-                os.usuario = request.user
-                os.full_clean()
-                os.save()
+        acao = request.POST.get('acao')
 
-                # Registro de pagamento na entrada (se selecionado forma de pagamento no modal/form)
-                forma_pgto = request.POST.get('forma_pagamento')
-                momento_pgto = request.POST.get('momento_pagamento', 'ENTRADA')
-                if forma_pgto:
+        if acao == 'cadastrar_cliente':
+            cliente_form_cadastro = ClienteCadastroForm(request.POST)
+            if cliente_form_cadastro.is_valid():
+                cliente = cliente_form_cadastro.save()
+                messages.success(request, f"Cliente '{cliente.nome}' cadastrado com sucesso!")
+            else:
+                messages.error(request, 'Não foi possível cadastrar o cliente. Confira os campos obrigatórios.')
+            return redirect(f"{reverse('recepcao')}?placa={termo_placa}")
+
+        if acao == 'cadastrar_veiculo':
+            veiculo_form_cadastro = VeiculoCadastroForm(request.POST)
+            cliente_id = request.POST.get('cliente')
+            cliente = Cliente.objects.filter(id=cliente_id, ativo=True).first()
+            if veiculo_form_cadastro.is_valid() and cliente:
+                veiculo = veiculo_form_cadastro.save(commit=False)
+                veiculo.cliente = cliente
+                veiculo.save()
+                messages.success(request, f"Veículo {veiculo.placa} cadastrado para {cliente.nome}.")
+                return redirect(f"{reverse('recepcao')}?placa={veiculo.placa}&selecionar=1")
+            if veiculo_form_cadastro.is_valid():
+                messages.error(request, 'Selecione um cliente ativo para o veículo.')
+            else:
+                messages.error(request, 'Não foi possível cadastrar o veículo. Confira os campos preenchidos.')
+            return redirect(f"{reverse('recepcao')}?placa={termo_placa}")
+
+        if not veiculo_selecionado or not veiculo_confirmado or not pode_abrir_os:
+            messages.error(request, 'Busque e selecione uma placa cadastrada antes de abrir a Ordem de Serviço.')
+            return redirect('recepcao')
+
+        form = OrdemServicoForm(request.POST)
+        form.fields['veiculo'].queryset = Veiculo.objects.filter(pk=veiculo_selecionado.pk)
+        if form.is_valid():
+            cliente_faturado = veiculo_selecionado.cliente.tipo == 'FATURADO'
+            pagamento_agora = (
+                not cliente_faturado
+                and request.POST.get('pagamento_agora') == 'on'
+            )
+            forma_pgto = request.POST.get('forma_pagamento', '')
+            formas_pagamento_imediato = {'PIX', 'DINHEIRO', 'CARTAO'}
+            if pagamento_agora and forma_pgto not in formas_pagamento_imediato:
+                messages.error(request, 'Selecione uma forma válida para registrar o pagamento agora.')
+            else:
+                try:
+                    os = form.save(commit=False)
+                    os.usuario = request.user
+                    os.full_clean()
+                    os.save()
+
                     Pagamento.objects.create(
                         ordem_servico=os,
-                        forma_pagamento=forma_pgto,
-                        momento_pagamento=momento_pgto,
-                        status='CONCLUIDO' if momento_pgto == 'ENTRADA' else 'PENDENTE',
-                        valor_pago=os.valor_total
+                        forma_pagamento=forma_pgto if pagamento_agora else ('FATURADO' if cliente_faturado else 'PENDENTE'),
+                        momento_pagamento='ENTRADA' if pagamento_agora else 'RETIRADA',
+                        status='CONCLUIDO' if pagamento_agora else 'PENDENTE',
+                        valor_pago=os.valor_total,
                     )
 
-                messages.success(request, f"Ordem de Serviço #{os.id:04d} para o veículo {os.veiculo.placa} aberta com sucesso!")
-                return redirect('recepcao')
-            except Exception as e:
-                messages.error(request, f"Erro ao registrar OS: {e}")
+                    messages.success(request, f"Ordem de Serviço #{os.id:04d} para o veículo {os.veiculo.placa} aberta com sucesso!")
+                    return redirect('recepcao')
+                except Exception as e:
+                    messages.error(request, f"Erro ao registrar OS: {e}")
     else:
         initial_data = {}
-        if veiculo_selecionado:
+        if veiculo_selecionado and veiculo_confirmado and pode_abrir_os:
             initial_data['veiculo'] = veiculo_selecionado
         form = OrdemServicoForm(initial=initial_data)
+        if veiculo_selecionado and veiculo_confirmado and pode_abrir_os:
+            form.fields['veiculo'].queryset = Veiculo.objects.filter(pk=veiculo_selecionado.pk)
 
     # Ordens ativas no pátio (em tempo real)
     ordens_ativas = OrdemServico.objects.exclude(status='ENTREGUE').select_related(
@@ -109,15 +154,25 @@ def recepcao_view(request):
 
     servicos_disponiveis = Servico.objects.filter(ativo=True)
     lavadores_disponiveis = Lavador.objects.filter(ativo=True)
+    clientes_ativos = Cliente.objects.filter(ativo=True).order_by('nome')
+    cliente_form_cadastro = ClienteCadastroForm()
+    veiculo_form_cadastro = VeiculoCadastroForm(initial={'placa': termo_placa})
+    empresas_faturadas_disponiveis = cliente_form_cadastro.fields['empresa_faturada'].queryset.exists()
 
     context = {
         'form': form,
         'termo_placa': termo_placa,
         'veiculo_selecionado': veiculo_selecionado,
+        'veiculo_confirmado': veiculo_confirmado,
+        'pode_abrir_os': pode_abrir_os,
         'alerta_rn01': alerta_rn01,
         'ordens_ativas': ordens_ativas,
         'servicos_disponiveis': servicos_disponiveis,
         'lavadores_disponiveis': lavadores_disponiveis,
+        'clientes_ativos': clientes_ativos,
+        'cliente_form_cadastro': cliente_form_cadastro,
+        'empresas_faturadas_disponiveis': empresas_faturadas_disponiveis,
+        'veiculo_form_cadastro': veiculo_form_cadastro,
         'hoje': timezone.localtime(timezone.now()),
     }
     return render(request, 'lavajato/recepcao.html', context)
@@ -137,15 +192,17 @@ def patio_view(request):
         status_validos = dict(OrdemServico.STATUS_CHOICES)
         if novo_status in status_validos:
             os.status = novo_status
-            if novo_status in ['CONCLUIDO', 'ENTREGUE'] and not os.data_hora_saida:
+            if novo_status == 'ENTREGUE':
                 os.data_hora_saida = timezone.now()
             os.save(update_fields=['status', 'data_hora_saida'])
             messages.success(request, f"OS #{os.id:04d} ({os.veiculo.placa}) alterada para: {status_validos[novo_status]}")
         return redirect('patio')
 
-    # Fila de lavagem ativa no pátio
+    # Fila de lavagem apenas das ordens abertas no dia atual
+    hoje = timezone.localdate()
     ordens_patio = OrdemServico.objects.filter(
-        status__in=['FILA', 'LAVAGEM', 'SECAGEM', 'CONCLUIDO']
+        data_hora__date=hoje,
+        status__in=['FILA', 'LAVAGEM', 'SECAGEM', 'CONCLUIDO', 'ENTREGUE'],
     ).select_related('veiculo', 'servico', 'lavador').order_by('data_hora')
 
     context = {
@@ -154,6 +211,8 @@ def patio_view(request):
         'total_lavagem': ordens_patio.filter(status='LAVAGEM').count(),
         'total_secagem': ordens_patio.filter(status='SECAGEM').count(),
         'total_concluido': ordens_patio.filter(status='CONCLUIDO').count(),
+        'total_entregue': ordens_patio.filter(status='ENTREGUE').count(),
+        'hoje': hoje,
     }
     return render(request, 'lavajato/patio.html', context)
 
@@ -174,7 +233,7 @@ def gerenciamento_view(request):
     tipo_relatorio = request.GET.get('tipo', 'diario')
 
     # Dados base para seletores
-    empresas_faturadas = Cliente.objects.filter(tipo='FATURADO', ativo=True).order_by('nome')
+    empresas_faturadas = EmpresaFaturada.objects.filter(ativo=True).order_by('nome')
     lavadores_todos = Lavador.objects.filter(ativo=True).order_by('nome')
 
     context = {
@@ -378,7 +437,7 @@ def gerenciamento_view(request):
     elif tipo_relatorio == 'faturado':
         data_ini_param = request.GET.get('data_inicio')
         data_fim_param = request.GET.get('data_fim')
-        cliente_id = request.GET.get('cliente_id')
+        empresa_id = request.GET.get('empresa_id')
         status_pgto = request.GET.get('status_pgto', 'TODOS')
 
         try:
@@ -391,17 +450,26 @@ def gerenciamento_view(request):
         except (ValueError, TypeError):
             data_fim = hoje
 
-        cliente_selecionado = None
+        empresa_selecionada = None
         ordens_faturadas = OrdemServico.objects.filter(
             veiculo__cliente__tipo='FATURADO',
             data_hora__date__gte=data_inicio,
             data_hora__date__lte=data_fim
-        ).select_related('veiculo', 'veiculo__cliente', 'servico', 'lavador', 'pagamento').order_by('data_hora')
+        ).select_related(
+            'veiculo',
+            'veiculo__cliente',
+            'veiculo__cliente__empresa_faturada',
+            'servico',
+            'lavador',
+            'pagamento',
+        ).order_by('data_hora')
 
-        if cliente_id and cliente_id.isdigit():
-            cliente_selecionado = Cliente.objects.filter(id=int(cliente_id), tipo='FATURADO').first()
-            if cliente_selecionado:
-                ordens_faturadas = ordens_faturadas.filter(veiculo__cliente=cliente_selecionado)
+        if empresa_id and empresa_id.isdigit():
+            empresa_selecionada = EmpresaFaturada.objects.filter(id=int(empresa_id)).first()
+            if empresa_selecionada:
+                ordens_faturadas = ordens_faturadas.filter(
+                    veiculo__cliente__empresa_faturada=empresa_selecionada
+                )
 
         if status_pgto == 'PENDENTE':
             ordens_faturadas = ordens_faturadas.filter(Q(pagamento__isnull=True) | Q(pagamento__status='PENDENTE'))
@@ -419,8 +487,8 @@ def gerenciamento_view(request):
         context.update({
             'data_inicio': data_inicio,
             'data_fim': data_fim,
-            'cliente_selecionado': cliente_selecionado,
-            'cliente_id': cliente_id,
+            'empresa_selecionada': empresa_selecionada,
+            'empresa_id': empresa_id,
             'status_pgto': status_pgto,
             'ordens_faturadas': ordens_faturadas,
             'total_faturamento': total_faturamento,
@@ -467,7 +535,7 @@ def imprimir_relatorio_view(request):
     if tipo == 'faturado':
         data_ini_param = request.GET.get('data_inicio')
         data_fim_param = request.GET.get('data_fim')
-        cliente_id = request.GET.get('cliente_id')
+        empresa_id = request.GET.get('empresa_id')
         status_pgto = request.GET.get('status_pgto', 'TODOS')
 
         try:
@@ -480,17 +548,24 @@ def imprimir_relatorio_view(request):
         except (ValueError, TypeError):
             data_fim = hoje
 
-        cliente_selecionado = None
+        empresa_selecionada = None
         ordens = OrdemServico.objects.filter(
             veiculo__cliente__tipo='FATURADO',
             data_hora__date__gte=data_inicio,
             data_hora__date__lte=data_fim
-        ).select_related('veiculo', 'veiculo__cliente', 'servico', 'lavador', 'pagamento').order_by('data_hora')
+        ).select_related(
+            'veiculo',
+            'veiculo__cliente',
+            'veiculo__cliente__empresa_faturada',
+            'servico',
+            'lavador',
+            'pagamento',
+        ).order_by('data_hora')
 
-        if cliente_id and cliente_id.isdigit():
-            cliente_selecionado = Cliente.objects.filter(id=int(cliente_id), tipo='FATURADO').first()
-            if cliente_selecionado:
-                ordens = ordens.filter(veiculo__cliente=cliente_selecionado)
+        if empresa_id and empresa_id.isdigit():
+            empresa_selecionada = EmpresaFaturada.objects.filter(id=int(empresa_id)).first()
+            if empresa_selecionada:
+                ordens = ordens.filter(veiculo__cliente__empresa_faturada=empresa_selecionada)
 
         if status_pgto == 'PENDENTE':
             ordens = ordens.filter(Q(pagamento__isnull=True) | Q(pagamento__status='PENDENTE'))
@@ -507,7 +582,7 @@ def imprimir_relatorio_view(request):
             'titulo_documento': 'DEMONSTRATIVO DE SERVIÇOS PARA FATURAMENTO CORPORATIVO',
             'data_inicio': data_inicio,
             'data_fim': data_fim,
-            'cliente': cliente_selecionado,
+            'empresa': empresa_selecionada,
             'ordens': ordens,
             'total_faturar': total_faturar,
             'total_pendente': total_pendente,
@@ -601,6 +676,10 @@ def registrar_pagamento_os(request, os_id):
 
     if request.method == 'POST':
         forma = request.POST.get('forma_pagamento', 'PIX')
+        if forma not in {'PIX', 'DINHEIRO', 'CARTAO'}:
+            messages.error(request, 'Selecione uma forma válida para confirmar o pagamento.')
+            return redirect('recepcao')
+
         valor = os.valor_total or os.servico.valor
 
         pagamento, _ = Pagamento.objects.get_or_create(

@@ -1,29 +1,32 @@
-[ CONCLUÍDO ] ── 1. Fase de Requisitos e Regras de Negócio
-                 ├── Levantamento de escopo e entrevistas
-                 └── Definição de regras (RN01: Faturados, RN03: Restrições de ADM)
+# Situação e próximos passos
 
-[ CONCLUÍDO ] ── 2. Fase de Modelagem e Diagramas UML
-                 ├── Modelagem Conceitual, Lógica e Física do Banco de Dados
-                 └── Diagramas de Casos de Uso, Classes e Sequência
+Este documento descreve o estado do código no repositório, não uma previsão de datas de implantação. Atualizado em novembro de 2026.
 
-[ CONCLUÍDO ] ── 3. Fase de UI/UX e Prototipagem de Telas
-                 ├── Protótipo Mobile do Pátio (`patio.html`)
-                 ├── Protótipo Desktop da Recepção (`recepcao.html`)
-                 └── Protótipo de Gestão e Caixa (`gerenciamento.html`)
+## Entregue no código
 
-[ CONCLUÍDO ] ── 4. Fase de Arquitetura, Design e Infraestrutura
-                 ├── Padrão Arquitetural MVT (Django) e C4 Model (`docs/arquitetura_e_design.md`)
-                 └── Especificação de Infraestrutura DEV/PROD (`docs/infraestrutura_e_ambientes.md`)
+- Requisitos e regras centrais documentados em `requirements.md` e `entrevista.md`.
+- Modelos Django, migrações e armazenamento em SQLite local ou banco configurado por `DATABASE_URL`.
+- Cadastro de clientes, empresas faturadas e veículos pela recepção e pelo Django Admin.
+- Busca por placa, abertura de OS e validação semanal para veículos faturados.
+- Pagamento de clientes avulsos na entrada ou registro para liquidação posterior. Clientes faturados ficam pendentes para faturamento da empresa selecionada.
+- Quadro diário do pátio com as etapas Fila, Lavagem, Secagem, Concluído e Entregue ao cliente.
+- Relatórios diário, mensal, de comissões e de faturamento por empresa; demonstrativo formatado para impressão.
+- Login, Django Admin e restrição de acesso ao gerenciamento administrativo.
+- Suíte Django com 17 testes na última validação documentada; confirme a contagem ao executar novamente.
 
-[ ⏳ ETAPA ATUAL ] ── 5. Fase de Implementação do Core (Backend & Integração)
-                     ├── 5.1. Configuração do ambiente virtual (`venv`) e dependências (`requirements.txt`)
-                     ├── 5.2. Criação das Models no Django (`models.py`) e migrações
-                     ├── 5.3. Personalização do Painel Administrativo (`admin.py`)
-                     └── 5.4. Programação das Views e lógica da regra de faturamento (RN01)
+## Pendências e limitações conhecidas
 
-[ PRÓXIMO ] ── 6. Fase de Testes, Validação e Qualidade (QA)
-             ├── Testes unitários das regras de negócio
-             └── Validação de permissões por perfil (RBAC)
+- Não há modo offline/PWA: a aplicação precisa alcançar o servidor e usa recursos de interface carregados por CDN.
+- Não há rotina automatizada de backup ou procedimento de restauração implementado no repositório.
+- Não há medição automatizada que comprove o alvo de resposta inferior a dois segundos.
+- O histórico completo de lavagens por placa ainda não tem uma tela dedicada.
+- A emissão de comprovante individual da OS não está implementada; existe relatório de faturamento imprimível.
+- A autorização de acesso a Recepção e Pátio exige login, mas não diferencia esses módulos por grupo de usuário.
+- A implantação em nuvem, os backups do provedor, a capacitação dos usuários e a homologação em dispositivos reais dependem de configuração/validação externa e não são comprovados apenas pelo código.
 
-[ FINAL ] ── 7. Fase de Implantação e Produção
-            └── Deploy na nuvem com Gunicorn e PostgreSQL
+## Referências
+
+- [Requisitos e status de implementação](requirements.md)
+- [Guia de implantação](guia_de_implantacao.md)
+- [Arquitetura e design](arquitetura_e_design.md)
+- [Infraestrutura e ambientes](infraestrutura.md)

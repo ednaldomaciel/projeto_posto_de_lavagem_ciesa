@@ -24,13 +24,13 @@ A arquitetura do sistema **Lava Jato do Valmir** foi projetada para atender tant
 | Requisito / Regra | Descrição no Negócio | Camada de Implementação C4 |
 | :--- | :--- | :--- |
 | **RN01** | Limite estrito de 1 lavagem/semana para frotas conveniadas/faturadas com bloqueio automático. | Nível 3: `Motor de Regras de Negócio (models.clean & pode_lavar_esta_semana)` |
-| **RN02** | Flexibilidade para pagamento no momento da entrada ou na retirada do veículo. | Nível 3: `Módulo de Caixa & Pagamento (PagamentoForm & Pagamento Model)` |
+| **RN02** | Cliente avulso pode pagar na entrada ou depois; cliente faturado é lançado à empresa vinculada sem pagamento no atendimento. | Nível 3: fluxo de pagamento da recepção e relatório por `EmpresaFaturada` |
 | **RN03** | Fechamento de caixa, alteração de tabela e ajuste de divergências restritos ao Administrador. | Nível 3: `Controle de Acesso RBAC (@user_passes_test(is_admin))` |
 | **RF01 / RNF05** | Gerenciar usuários e controle de acesso baseado em perfis (Admin vs Recepcionista). | Nível 3: `Controlador de Autenticação (django.contrib.auth)` |
-| **RF02** | Cadastro e controle de veículos, placas e segmentação de clientes (Avulso vs Faturado). | Nível 3: `Controlador de Recepção & Camada ORM (Veiculo & Cliente)` |
+| **RF02** | Cadastro de veículos, clientes e empresas faturadas. | Nível 3: `Controlador de Recepção & Camada ORM (EmpresaFaturada, Veiculo & Cliente)` |
 | **RF03** | Gestão de lavadores e cálculo automático da comissão por serviço executado. | Nível 3: `Módulo Financeiro & Calculador de Comissões (valor_comissao)` |
-| **RF05 / RNF02** | Acompanhamento do pátio em tempo real e interface responsiva mobile/tablet. | Nível 2 & 3: `Frontend Mobile-First (Tailwind) & Controlador de Pátio` |
-| **RF06 / RF08** | Emissão de OS, comprovantes, fechamento de caixa diário, relatórios mensais, comissões e demonstrativo de faturamento corporativo para cobrança e impressão. | Nível 3: `Controlador de Gestão, Relatórios e Emissor de Faturas Impressas` |
+| **RF05 / RNF02** | Acompanhamento do pátio por requisições HTTP e interface responsiva para dispositivos móveis. | Nível 2 & 3: `Frontend Responsivo (Tailwind) & Controlador de Pátio` |
+| **RF06 / RF08** | Pagamentos avulsos, faturamento corporativo, relatórios operacionais e demonstrativo imprimível. Comprovante individual de OS não implementado. | Nível 3: `Controlador de Gestão, Relatórios e Emissor de Faturas Impressas` |
 
 ---
 
@@ -44,29 +44,26 @@ flowchart TD
         Admin["Administrador\n(Seu Valmir)\nGerencia finanças, comissões,\npreços e caixa (RN03)"]
         Recepcao["Recepcionista\n(Juliana)\nCadastra clientes, busca placas,\nemite OS e cobra (RF02, RF05)"]
         Lavador["Lavador do Pátio\n(Operador Móvel)\nAcompanha fila e atualiza status\nda lavagem no pátio (RNF02)"]
-        Cliente["Cliente do Posto\n(Avulso ou Faturado)\nEntrega veículo, recebe serviço\ne efetua pagamento (RN01, RN02)"]
+        Cliente["Cliente do Posto\n(Avulso ou Faturado)\nEntrega e retira o veículo"]
     end
 
     subgraph Sistema["Fronteira do Sistema"]
         LavaJatoSys["Sistema de Gestão do Lava Jato\n(Lava Jato do Valmir)\nGerencia ordens de serviço, fluxo de pátio,\ntrava de faturados e apuração de comissões."]
     end
 
-    subgraph Externos["Sistemas e Meios Externos"]
-        GatewayPag["Meios de Pagamento\n(PIX / Cartão / Dinheiro)\nLiquidação financeira dos serviços."]
-    end
-
     Admin -->|"Monitora caixa, consulta comissões e altera tabela de preços (HTTPS)"| LavaJatoSys
     Recepcao -->|"Busca placas, valida convênios, emite OS e recebe pagamentos (HTTPS)"| LavaJatoSys
     Lavador -->|"Atualiza status da lavagem no tablet/smartphone (HTTPS)"| LavaJatoSys
     Cliente -.->|"Solicita atendimento e retira veículo"| Recepcao
-    LavaJatoSys -->|"Registra transações financeiras (RF06)"| GatewayPag
 ```
+
+Os meios PIX, dinheiro e cartão são selecionados e registrados pela operação; não há integração técnica com gateway ou instituição financeira.
 
 ### Detalhamento dos Elementos de Contexto
 * **Administrador (Seu Valmir):** Acessa o dashboard restrito (`/gerenciamento/`) e o Django Admin (`/admin/`), monitorando faturamento diário, extrato de comissões a pagar e relatórios de auditoria (**RF08, RN03**).
-* **Recepcionista:** Opera a estação desktop da guarita (`/recepcao/`), realizando busca rápida por placa, abrindo Ordens de Serviço e executando cobranças na entrada ou saída (**RF05, RN02**).
-* **Lavador:** Acessa a interface responsiva de pátio (`/patio/`) via dispositivos móveis para transicionar veículos entre *Fila*, *Lavagem*, *Secagem* e *Concluído* (**RF03, RNF02**).
-* **Cliente:** Beneficiário do serviço de limpeza automotiva, podendo ser cliente **Avulso** (sem limite semanal) ou **Faturado** (sujeito à trava estrita de 1 lavagem semanal da **RN01**).
+* **Recepcionista:** Opera a estação desktop da guarita (`/recepcao/`), busca placas, abre OS e registra pagamentos de clientes avulsos. Clientes faturados não pagam no atendimento; o valor fica pendente para a empresa vinculada.
+* **Operador do pátio:** Um usuário autenticado acessa `/patio/` para transicionar veículos por *Fila*, *Lavagem*, *Secagem*, *Concluído* e *Entregue*. O código não define grupo específico de lavador.
+* **Cliente:** Beneficiário do serviço de limpeza automotiva, podendo ser **Avulso** (sem limite semanal) ou **Faturado** (sujeito à trava de 1 lavagem semanal da **RN01**).
 
 ---
 
@@ -86,9 +83,9 @@ flowchart TD
         
         WebServer["Servidor Web & Estáticos\n(WhiteNoise / Gunicorn)\nDistribuição de assets comprimidos e servidor WSGI concorrente."]
         
-        BackendApp["Aplicação Backend Django 5.2\n(Python 3.11+ / Django MVT)\nProcessa requisições HTTP, executa regras de negócio,\nvalida RN01 e gerencia sessões RBAC."]
+        BackendApp["Aplicação Backend Django 5.x\n(Python 3.11+ / Django MVT)\nProcessa requisições HTTP, executa regras de negócio,\nvalida RN01 e gerencia sessões."]
         
-        Database["Banco de Dados Relacional\n(SQLite3 em Dev / PostgreSQL em Prod)\nArmazena clientes, veículos, lavadores,\nserviços, OS e pagamentos com integridade referencial."]
+        Database["Banco de Dados Relacional\n(SQLite3 em Dev / PostgreSQL em Prod)\nArmazena empresas, clientes, veículos,\nserviços, OS e pagamentos."]
     end
 
     UserWeb -->|"HTTP / HTTPS (HTML5/CSS)"| WebFrontend
@@ -100,15 +97,15 @@ flowchart TD
 
 ### Especificação dos Contêineres
 1. **Frontend Web (HTML5 / Tailwind CSS):**
-   * *Função:* Apresentação visual, formulários interativos, badges de status em tempo real e alertas coloridos para bloqueios de negócio.
+   * *Função:* Apresentação visual, formulários interativos, badges de status e alertas coloridos para bloqueios de negócio. Não há atualização push/WebSocket.
    * *Protocolos:* Renderizado via Server-Side Rendering (SSR) pelo Django Template Engine com dependências de estilo carregadas via CDN.
 2. **Servidor Web e Gestão de Estáticos (WhiteNoise / Gunicorn):**
-   * *Função:* Fornecimento de assets estáticos com compressão Gzip/Brotli e suporte a múltiplos workers assíncronos em ambiente de produção (Linux).
+   * *Função:* Fornecimento de arquivos estáticos pelo WhiteNoise; quantidade e tipo de workers dependem do comando de inicialização configurado.
 3. **Aplicação Backend (Django):**
    * *Função:* Núcleo de regras de negócio, autenticação baseada em sessão segura, roteamento MVT e transações relacionais.
 4. **Banco de Dados Relacional:**
    * *Desenvolvimento:* SQLite3 embarcado em `backend/db.sqlite3` para zero dependência externa.
-   * *Produção:* PostgreSQL configurado via `DATABASE_URL` para suporte a alta concorrência e backups automatizados (**RNF04**).
+   * *Produção:* PostgreSQL configurado via `DATABASE_URL`. O repositório não implementa backup automatizado; esse controle precisa ser configurado e validado no ambiente.
 
 ---
 
@@ -130,21 +127,21 @@ flowchart TD
     subgraph DjangoApp["Contêiner Backend: Aplicação Django (App lavajato)"]
         UrlRouter["Roteador de URLs\n(lavajato/urls.py)\nDireciona endpoints para as respectivas Views"]
         
-        RBACAuth["Componente de Autenticação & RBAC\n(views.login_view / is_admin)\nValida credenciais PBKDF2 e restringe permissões (RN03)"]
+        RBACAuth["Componente de Autenticação & RBAC\n(views.login_view / is_admin)\nUsa autenticação Django e restringe acesso administrativo (RN03)"]
         
         RecepcaoCtrl["Controlador de Recepção\n(views.recepcao_view & forms.py)\nBusca placa, prepara formulário e trata submissão de OS"]
         
-        PatioCtrl["Controlador do Pátio\n(views.patio_view)\nAtualiza status de OS (Fila -> Lavagem -> Secagem -> Concluído)"]
+        PatioCtrl["Controlador do Pátio\n(views.patio_view)\nAtualiza status de OS até Entregue"]
         
         GestaoCtrl["Controlador de Gestão & Relatórios\n(views.gerenciamento_view)\nProcessa filtros diários, mensais, comissões e faturamento por período"]
 
-        PrintEngine["Emissor de Faturas & Relatórios Impressos\n(views.imprimir_relatorio_view)\nRenderiza demonstrativos formais de cobrança e recibos A4"]
+        PrintEngine["Página de Relatórios para Impressão\n(views.imprimir_relatorio_view)\nRenderiza HTML imprimível pelo navegador"]
         
         BusinessRules["Motor de Regras de Negócio\n(models.OrdemServico.clean & Veiculo.pode_lavar_esta_semana)\nValidação da trava semanal de faturados (RN01) e flexibilidade (RN02)"]
         
         CommissionEngine["Calculador de Comissões\n(OrdemServico.valor_comissao)\nCalcula comissão com base na taxa percentual do lavador (RF03)"]
 
-        ORMModels["Camada de Modelos ORM\n(Cliente, Veiculo, Lavador, Servico,\nOrdemServico, Pagamento)\nMapeamento e integridade dos dados"]
+        ORMModels["Camada de Modelos ORM\n(EmpresaFaturada, Cliente, Veiculo,\nLavador, Servico, OrdemServico, Pagamento)"]
     end
 
     subgraph DataStore["Persistência"]
@@ -184,26 +181,26 @@ Mapeia os caminhos canônicos (`/login/`, `/recepcao/`, `/patio/`, `/gerenciamen
 
 #### 2. Controlador de Autenticação e RBAC (`views.login_view` e `is_admin`)
 * **Implementação dos requisitos:** **RF01**, **RN03**, **RNF01**, **RNF05**.
-* Realiza autenticação criptografada de senhas via PBKDF2 com salt SHA256.
+* Usa o sistema de autenticação e hash de senhas padrão do Django.
 * Protege a visão administrativa (`/gerenciamento/`) através do decorador `@user_passes_test(is_admin)`, impedindo o acesso de operadores não autorizados aos dados de faturamento e fechamento de caixa.
 
 #### 3. Controlador de Recepção (`views.recepcao_view` & `forms.OrdemServicoForm`)
 * **Implementação dos requisitos:** **RF02**, **RF05**, **RN01**, **RN02**.
 * Recebe consultas por placa de veículo, normaliza o formato (removendo hifens e aplicando uppercase) e invoca a validação de limite semanal de faturamento.
 * Se a placa pertencer a um cliente `FATURADO` e já possuir atendimento registrado na semana corrente, renderiza feedback de alerta na tela e impede a persistência.
-* Oferece a seleção flexível de pagamento imediato (**RN02** na Entrada) ou posterior (**RN02** na Retirada).
+* Para clientes avulsos, permite marcar pagamento imediato ou deixá-lo pendente para recebimento posterior. Para clientes faturados, esconde a opção de pagamento no atendimento e cria um lançamento `FATURADO` pendente para a empresa vinculada.
 
 #### 4. Motor de Regras de Negócio (`clean()` e `pode_lavar_esta_semana()`)
 * **Implementação da regra central:** **RN01**.
-* Localizado no coração do modelo [`Veiculo`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/backend/lavajato/models.py) e [`OrdemServico`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/backend/lavajato/models.py):
+* Localizado no modelo [`Veiculo`](../backend/lavajato/models.py) e no método `clean()` de [`OrdemServico`](../backend/lavajato/models.py):
   $$\text{início\_semana} = \text{hoje} - \text{dias}(\text{dia\_da\_semana})$$
-* Verifica se existe alguma `OrdemServico` associada ao veículo com `data_hora >= início_semana`. Caso afirmativo, lança `ValidationError`, blindando o sistema contra inconsistências.
+* Verifica se existe alguma `OrdemServico` associada ao veículo desde o início da semana. Caso afirmativo, lança `ValidationError`. `OrdemServico.save()` chama `full_clean()` antes de salvar; operações em lote que não chamam `save()` não executam essa validação.
 
 #### 5. Controlador de Pátio (`views.patio_view`)
 * **Implementação dos requisitos:** **RF05**, **RNF02**.
-* Projetado para consumo móvel no pátio físico. Permite aos lavadores alterar o ciclo de vida do veículo em tempo real:
-  $$\text{FILA} \longrightarrow \text{LAVAGEM} \longrightarrow \text{SECAGEM} \longrightarrow \text{CONCLUIDO}$$
-* Ao atingir o status `CONCLUIDO`, registra o timestamp `data_hora_saida` e disponibiliza a OS para entrega imediata na recepção.
+* Projetado para consumo móvel no pátio físico. Permite atualizar o ciclo de vida do veículo por requisições HTTP:
+  $$\text{FILA} \longrightarrow \text{LAVAGEM} \longrightarrow \text{SECAGEM} \longrightarrow \text{CONCLUIDO} \longrightarrow \text{ENTREGUE}$$
+* `CONCLUIDO` indica que o serviço está pronto; a coluna final do quadro registra a entrega. Ao mudar para `ENTREGUE`, o sistema grava `data_hora_saida`. A entrega física não depende de o pagamento estar concluído.
 
 #### 6. Módulo de Gestão Financeira, Relatórios e Emissão de Faturas (`views.gerenciamento_view`, `views.imprimir_relatorio_view`)
 * **Implementação dos requisitos:** **RF03**, **RF08**, **RN03**.
@@ -212,11 +209,11 @@ Mapeia os caminhos canônicos (`/login/`, `/recepcao/`, `/patio/`, `/gerenciamen
   2. **Consolidado Mensal:** Agrega receitas e despesas por mês e ano, calculando ticket médio por veículo e distribuição das formas de pagamento.
   3. **Extrato de Comissões por Lavador:** Filtra por período e lavador específico, calculando:
      $$\text{Comissão} = \text{Valor da OS} \times \left(\frac{\text{Percentual do Lavador}}{100}\right)$$
-  4. **Faturamento de Empresas Conveniadas (Cobrança Corporativa):** Permite selecionar a empresa parceira (`Cliente` do tipo `FATURADO`) e o intervalo de datas (início e fim), gerando o extrato detalhado de todos os veículos da frota lavados no período, saldo já liquidado e total pendente a faturar.
-* **Componente de Impressão (`imprimir_relatorio_view`):** Renderiza demonstrativo comercial formatado para papel A4 e exportação PDF, contendo cabeçalho institucional, dados do tomador, tabela de atendimentos, dados bancários (Chave PIX) e termo de aceite com protocolo de assinatura mútua.
+  4. **Faturamento de Empresas Conveniadas:** Permite selecionar `EmpresaFaturada` e período, somando as OSs dos clientes vinculados e exibindo o saldo pendente.
+* **Componente de Impressão (`imprimir_relatorio_view`):** Renderiza HTML preparado para impressão/salvamento em PDF pelo navegador. Os dados do estabelecimento e bancários no código são valores de exemplo e precisam ser conferidos/substituídos antes de enviar o documento como cobrança real.
 
 #### 7. Camada ORM (`models.py`)
-Mapeia as 6 entidades fundamentais do banco de dados relacional (`Cliente`, `Veiculo`, `Lavador`, `Servico`, `OrdemServico`, `Pagamento`), assegurando integridade referencial com chaves estrangeiras com regras `PROTECT` e `CASCADE` apropriadas.
+Mapeia as 7 entidades do app (`EmpresaFaturada`, `Cliente`, `Veiculo`, `Lavador`, `Servico`, `OrdemServico`, `Pagamento`), com ações de exclusão definidas por `on_delete` em cada relação.
 
 ---
 
@@ -256,14 +253,14 @@ O Django estrutura a separação de responsabilidades pelo padrão **MVT**, corr
 ## 7. Requisitos Não Funcionais (RNF) e Atributos de Qualidade
 
 1. **Segurança (RNF01 e RNF05):**
-   * Armazenamento de senhas em hash PBKDF2 com salt de 720.000 iterações.
+   * Senhas armazenadas pelos hashers e parâmetros configurados pelo Django; o projeto não fixa uma contagem de iterações própria.
    * Tokens CSRF (*Cross-Site Request Forgery*) obrigatórios em todos os formulários POST.
    * Proteção de cabeçalhos HTTP via `SecurityMiddleware` e `X-Frame-Options` ativado contra clickjacking.
 2. **Usabilidade e Responsividade (RNF02):**
    * Layout responsivo utilizando Tailwind CSS, com componentes táteis específicos para lavadores no pátio e visualização densa em grade para operadores de recepção.
 3. **Desempenho e Latência (RNF03):**
-   * Índices de banco de dados criados nas colunas mais consultadas (`placa`, `cliente_id`, `data_hora`, `status`).
-   * Consultas otimizadas com `select_related('veiculo', 'servico', 'lavador')` para eliminar o problema de consultas $N+1$.
+   * `placa` é única e chaves estrangeiras recebem índices do Django; não há índices explícitos documentados para `data_hora` e `status`, nem medição de desempenho.
+   * Algumas consultas usam `select_related`; a aplicação não comprova eliminação geral de consultas $N+1$.
 4. **Confiabilidade e Backup (RNF04):**
-   * Desacoplamento via `.env` permitindo espelhamento e rotinas de dump automáticas do PostgreSQL em produção.
+   * Configuração por variáveis de ambiente; backup automatizado de PostgreSQL não está implementado no repositório e deve ser configurado no ambiente.
 

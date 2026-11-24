@@ -1,39 +1,28 @@
-1. LAVA JATO DO VALMIR - SISTEMA DE GESTÃO
-│
-├── 1.1. Iniciação e Requisitos
-│   ├── 1.1.1. Levantamento de Requisitos (Entrevistas & Regras de Negócio)
-│   ├── 1.1.2. Documento de Requisitos Funcionais e Não Funcionais (RF / RNF)
-│   └── 1.1.3. Matriz de Riscos e Regras de Negócio (RN01, RN02, RN03)
-│
-├── 1.2. Modelagem e Especificação de Sistemas
-│   ├── 1.2.1. Modelagem do Banco de Dados (Conceptual, Lógica e Física)
-│   ├── 1.2.2. Diagrama de Casos de Uso (UML)
-│   ├── 1.2.3. Diagrama de Classes (UML)
-│   └── 1.2.4. Diagrama de Sequência (UML - Abertura de OS & RN01)
-│
-├── 1.3. UI/UX e Prototipagem de Telas
-│   ├── 1.3.1. Protótipo do Painel do Pátio (Mobile/Tablet - `patio.html`)
-│   ├── 1.3.2. Protótipo da Recepção (Desktop - `recepcao.html`)
-│   └── 1.3.3. Protótipo do Painel Administrativo (`gerenciamento.html`)
-│
-├── 1.4. Arquitetura e Infraestrutura de Software
-│   ├── 1.4.1. Definição do Padrão Arquitetural MVT (Django) e C4 Model
-│   ├── 1.4.2. Especificação da Infraestrutura e Ambientes (`docs/infraestrutura_e_ambientes.md`)
-│   └── 1.4.3. Mapeamento de Servidor WSGI (Gunicorn), Assets (WhiteNoise) e DB (PostgreSQL/SQLite)
-│
-├── 1.5. Desenvolvimento Core (Backend & Frontend) ◄── [PRÓXIMA ETAPA]
-│   ├── 1.5.1. Configuração do Ambiente Virtual (`venv`) e `requirements.txt`
-│   ├── 1.5.2. Mapeamento de Entidades no ORM (`models.py`) e Migrations
-│   ├── 1.5.3. Personalização do Painel de Administração (`admin.py`)
-│   ├── 1.5.4. Lógica das Views (`views.py`) e Trava da Regra de Faturamento (RN01)
-│   └── 1.5.5. Integração de Templates com Tailwind CSS
-│
-├── 1.6. Testes e Qualidade (QA)
-│   ├── 1.6.1. Testes Unitários dos Models e Validadores
-│   ├── 1.6.2. Testes de Integração de Telas e Rotas
-│   └── 1.6.3. Validação de Responsividade e Permissões (RBAC)
-│
-└── 1.7. Implantação e Encerramento
-    ├── 1.7.1. Configuração do Ambiente de Produção (Nuvem / Gunicorn / PostgreSQL)
-    ├── 1.7.2. Treinamento dos Operadores e Administrador (Seu Valmir)
-    └── 1.7.3. Consolidação do Repositório Git e Documentação Final
+# Estrutura Analítica do Projeto (EAP)
+
+Esta EAP registra o escopo do projeto. Os pacotes de desenvolvimento e documentação foram concluídos no código; operação, treinamento e controles de produção continuam sujeitos à implantação e validação no ambiente real.
+
+```text
+1. Sistema de Gestão do Lava Jato do Valmir
+├── 1.1 Requisitos e regras de negócio [concluído]
+│   ├── Entrevistas e levantamento de escopo
+│   └── Requisitos funcionais, não funcionais e matriz de riscos
+├── 1.2 Modelagem e arquitetura [concluído]
+│   ├── Modelagem Django ORM e migrações
+│   ├── Diagramas UML/C4 e decisões arquiteturais
+│   └── Infraestrutura de desenvolvimento e implantação
+├── 1.3 Aplicação [implementada no repositório]
+│   ├── Autenticação, recepção, clientes, empresas e veículos
+│   ├── Ordens de serviço, pagamentos e faturamento corporativo
+│   ├── Quadro do pátio até a entrega ao cliente
+│   └── Gestão, relatórios e impressão
+├── 1.4 Testes [implementados]
+│   └── Testes de regras, fluxos, permissões e relatórios
+└── 1.5 Operação e produção [validar por ambiente]
+    ├── Configurar segredos, hosts, banco e domínio
+    ├── Definir e testar backups/restauração
+    ├── Homologar permissões e operação em dispositivos reais
+    └── Treinar usuários e acompanhar a implantação
+```
+
+O documento [PLANO.md](../PLANO.md) é a linha de base acadêmica de cronograma e estimativas; seus prazos e custos não representam estado operacional nem cotações atuais. A configuração real deve seguir o [guia de implantação](guia_de_implantacao.md).

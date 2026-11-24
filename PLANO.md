@@ -8,6 +8,8 @@
 * **Artefato:** `PLANO.md` / `parte_dois.md` (Totalmente rastreável à Etapa 1: Requisitos, C4 Model v2.0 e Registros ADR-001 a ADR-006)
 * **Data:** Novembro / 2026
 
+> **Nota de escopo e status:** Este documento é uma linha de base acadêmica de planejamento. Datas de Go-Live, custos, reservas, hospedagem, backups, treinamento e demais entregas são premissas/estimativas do plano, não comprovação de que foram executadas ou de que o sistema esteja em produção. Para o estado do código, consulte [`docs/roadmap.md`](docs/roadmap.md).
+
 ---
 
 ## Visão Geral e Princípio Norteador
@@ -16,12 +18,12 @@
 
 O presente plano de projeto não introduz um sistema novo: ele converte as decisões arquiteturais da **Etapa 1** (especificadas na Arquitetura C4 Model e nos registros **ADR-001 a ADR-006**) em um plano de projeto formal, estruturado segundo os domínios de desempenho do **PMBOK 7ª Edição** (*Planejamento, Incerteza e Trabalho*).
 
-Cada pacote de trabalho, prazo, custo e risco mapeado neste plano é **100% rastreável a uma decisão arquitetural da Etapa 1**.
+Os pacotes de trabalho, prazos, custos e riscos deste plano buscam rastreabilidade às decisões arquiteturais da Etapa 1.
 
 ### Premissas Gerais do Projeto
 1. **Regime de Trabalho:** Equipe de desenvolvimento ágil/acadêmica em dedicação parcial (~15 a 20 horas semanais de desenvolvimento e testes).
 2. **Contexto Operacional e Localidade:** Operação física no pátio do *Lava Jato do Valmir*, Manaus/AM, sob fuso horário oficial `America/Manaus` (UTC-4).
-3. **Ambiente Tecnológico:** Infraestrutura híbrida com zero dependência de servidor físico local dedicado, operando via PaaS/nuvem gerenciada em produção e SQLite3 embarcado em desenvolvimento.
+3. **Premissa de Ambiente Tecnológico:** O plano considera PaaS/nuvem gerenciada em produção e SQLite3 em desenvolvimento; essa premissa não comprova uma implantação em produção.
 
 ---
 
@@ -31,12 +33,12 @@ A tabela a seguir consolida as 6 decisões de arquitetura da Etapa 1 (**ADR-001 
 
 | Decisão Arquitetural (Etapa 1) | Escopo (Cria / Elimina) | Cronograma (Dependências e Caminho Crítico) | Custo (Implantação e 3 Anos de Operação) | Riscos (Mitiga / Cria / Resposta e Gatilho) | Aquisições (Construir vs. Comprar / Dependência) | Equipe (Competência e Operação Pós-Entrega) |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **ADR-001: Padrão MVT com Framework Django (Python 3.11+)** | **Cria:** Core MVT, views operacionais, templates HTML/Tailwind, Django Admin nativo e testes unitários.<br><br>**Elimina:** Desenvolvimento e manutenção de SPA separada (React/Vue), backend REST isolado e pipeline de build Node.js. | **Dependências:** Modelos ORM antes das views e templates.<br><br>**Paralelismo:** Views de Recepção e Pátio avançam em paralelo após models estáveis.<br><br>**Caminho Crítico:** Sim. | **Implantação:** Custo de licença zero (código aberto).<br><br>**3 Anos:** Custo mínimo de runtime Python. | **Mitiga:** Falhas de segurança (CSRF, XSS, SQLi).<br><br>**Cria:** Acoplamento SSR em interações.<br><br>**Resposta:** Rotas curtas e testes de fluxo.<br><br>**Gatilho:** Latência > 2s em homologação. | **Construir:** Aplicação de domínio 100% customizada.<br><br>**Comprar:** Nada.<br><br>**Dependência:** Framework Django mantido pela PSF; migração exigiria reescrita. | **Competência:** Domínio de Python/Django presente.<br><br>**Operação:** Administrador (Seu Valmir) e suporte do autor. |
-| **ADR-002: Banco Híbrido (SQLite3 Dev / PostgreSQL Prod)** | **Cria:** Configuração `.env` / `dj-database-url`, migrações relacionais e rotina de dump/backup.<br><br>**Elimina:** Obrigatoriedade de SGBD pesado ou Docker local para banca/avaliadores. | **Dependências:** Schema estabilizado antes da migração em nuvem.<br><br>**Paralelismo:** Provisionamento do PostgreSQL em paralelo ao dev local.<br><br>**Caminho Crítico:** Sim. | **Implantação:** R$ 0 no dev; setup em nuvem.<br><br>**3 Anos:** Custo mensal de banco gerenciado (~R$ 60 a R$ 100/mês). | **Mitiga:** Concorrência e *database locked* no pátio.<br><br>**Cria:** Divergência de dialeto SQL entre SQLite e Postgres.<br><br>**Resposta:** Testar em homologação com PostgreSQL.<br><br>**Gatilho:** Erro em migração de homologação. | **Comprar:** Instância gerenciada de PostgreSQL.<br><br>**Dependência:** Padrão PostgreSQL (fácil portabilidade entre provedores). | **Competência:** Conhecimento relacional presente.<br><br>**Operação:** Automação de backups + monitoramento técnico. |
-| **ADR-003: Regras de Negócio no Domínio/ORM (RN01, RN02, RF03)** | **Cria:** Método `pode_lavar_esta_semana()`, validação `clean()`, cálculo `valor_comissao` e modelo `Pagamento`.<br><br>**Elimina:** Duplicação de lógica de travas em views, formulários e scripts externos. | **Dependências:** Modelos antes das telas de recepção e pátio.<br><br>**Paralelismo:** Testes unitários das regras em paralelo ao CRUD.<br><br>**Caminho Crítico:** Sim. | **Implantação:** Esforço focado em testes unitários.<br><br>**3 Anos:** Previne perdas de faturamento corporativo e erros de comissão. | **Mitiga:** Violação da trava semanal (RN01) e conflito de comissões (RF03).<br><br>**Cria:** Erros de borda na virada de semana (fuso local).<br><br>**Resposta:** Testes unitários com fuso de Manaus.<br><br>**Gatilho:** Falha de teste no domingo 23:59. | **Construir:** Regras 100% proprietárias do negócio.<br><br>**Dependência:** Zero dependência externa. | **Competência:** Alinhada nas entrevistas de campo.<br><br>**Operação:** Validação pelo Administrador e uso pela Recepção. |
+| **ADR-001: Padrão MVT com Framework Django (Python 3.11+)** | **Cria:** Core MVT, views operacionais, templates HTML/Tailwind, Django Admin nativo e testes unitários.<br><br>**Elimina:** Desenvolvimento e manutenção de SPA separada (React/Vue), backend REST isolado e pipeline de build Node.js. | **Dependências:** Modelos ORM antes das views e templates.<br><br>**Paralelismo:** Views de Recepção e Pátio avançam em paralelo após models estáveis.<br><br>**Caminho Crítico:** Sim. | **Implantação:** Custo de licença zero (código aberto).<br><br>**3 Anos:** Estimativa de custo de runtime Python. | **Mitiga:** Riscos de CSRF, XSS e SQLi por proteções do framework e consultas parametrizadas; isso não substitui configuração e revisão de segurança.<br><br>**Cria:** Acoplamento SSR em interações.<br><br>**Resposta:** Rotas curtas e testes de fluxo.<br><br>**Gatilho:** Latência > 2s em homologação. | **Construir:** Aplicação de domínio customizada.<br><br>**Comprar:** Nada.<br><br>**Dependência:** Framework Django mantido pela PSF; migração exigiria adaptação. | **Competência:** Domínio de Python/Django presente.<br><br>**Operação planejada:** Administrador e suporte técnico. |
+| **ADR-002: Banco Híbrido (SQLite3 Dev / PostgreSQL Prod)** | **Cria:** Configuração `.env` / `dj-database-url` e migrações relacionais; backup é uma atividade operacional planejada, não automatizada pelo repositório.<br><br>**Elimina:** Obrigatoriedade de SGBD pesado ou Docker local para banca/avaliadores. | **Dependências:** Schema estabilizado antes da migração em nuvem.<br><br>**Paralelismo:** Provisionamento do PostgreSQL em paralelo ao dev local.<br><br>**Caminho Crítico:** Sim. | **Implantação:** R$ 0 no dev; setup em nuvem.<br><br>**3 Anos:** Estimativa de custo mensal de banco gerenciado (~R$ 60 a R$ 100/mês). | **Mitiga:** Concorrência e *database locked* no pátio.<br><br>**Cria:** Divergência de dialeto SQL entre SQLite e Postgres.<br><br>**Resposta:** Testar em homologação com PostgreSQL.<br><br>**Gatilho:** Erro em migração de homologação. | **Comprar:** Instância gerenciada de PostgreSQL.<br><br>**Dependência:** Padrão PostgreSQL (fácil portabilidade entre provedores). | **Competência:** Conhecimento relacional presente.<br><br>**Operação planejada:** Backup e monitoramento técnico a configurar. |
+| **ADR-003: Regras de Negócio no Domínio/ORM (RN01, RN02, RF03)** | **Cria:** Método `pode_lavar_esta_semana()`, validação `clean()`, cálculo `valor_comissao` e modelo `Pagamento`.<br><br>**Elimina:** Duplicação de lógica de travas em views, formulários e scripts externos. | **Dependências:** Modelos antes das telas de recepção e pátio.<br><br>**Paralelismo:** Testes unitários das regras em paralelo ao CRUD.<br><br>**Caminho Crítico:** Sim. | **Implantação:** Esforço focado em testes unitários.<br><br>**3 Anos:** A regra semanal ajuda a evitar cobranças fora da política e o cálculo automatiza comissões. | **Mitiga:** Violação da trava semanal (RN01) e conflito de comissões (RF03).<br><br>**Cria:** Erros de borda na virada de semana (fuso local).<br><br>**Resposta:** Testes unitários com fuso de Manaus.<br><br>**Gatilho:** Falha de teste no domingo 23:59. | **Construir:** Regras específicas do negócio.<br><br>**Dependência:** Implementadas sobre o framework e ORM do Django. | **Competência:** Alinhada nas entrevistas de campo.<br><br>**Operação:** Validação pelo Administrador e uso pela Recepção. |
 | **ADR-004: Interface Responsiva Tailwind (CDN) Mobile-First** | **Cria:** Templates herdados de `base.html`, painel desktop denso e painel pátio touch-friendly.<br><br>**Elimina:** Compilação Webpack/PostCSS e pasta `node_modules` no repositório. | **Dependências:** Endpoints e rotas definidos antes do CSS final.<br><br>**Paralelismo:** Layout do Pátio e da Recepção em paralelo.<br><br>**Caminho Crítico:** Não (parcialmente no aceite do pátio). | **Implantação:** Custo zero de ferramentas.<br><br>**3 Anos:** Depende apenas de conectividade no pátio. | **Mitiga:** Incompatibilidade com tablets e telas molhadas no pátio.<br><br>**Cria:** Indisponibilidade de CDN externa sem conexão.<br><br>**Resposta:** Teste de campo no pátio com 4G/Wi-Fi.<br><br>**Gatilho:** Reclamação de usabilidade/toque. | **Comprar:** Nada.<br><br>**Dependência:** CDN pública (Tailwind/FontAwesome). Migração para estático local é trivial. | **Competência:** Domínio pleno de HTML/CSS.<br><br>**Operação:** Lavadores (smartphone/tablet), Recepcionista (desktop). |
 | **ADR-005: Controle RBAC Nativo (RN03 / RNF05)** | **Cria:** Grupos `Administrador` e `Recepcionista`, decorador `@user_passes_test(is_admin)` e login.<br><br>**Elimina:** Implementação caseira e vulnerável de tabelas de usuário e hash de senhas. | **Dependências:** Grupos antes do bloqueio das rotas financeiras.<br><br>**Paralelismo:** Telas operacionais e RBAC em paralelo.<br><br>**Caminho Crítico:** Sim. | **Implantação:** Esforço reduzido pela maturidade do Django.<br><br>**3 Anos:** Mitiga fraudes no caixa e alteração indevida de preços. | **Mitiga:** Recepcionista visualizando lucro ou alterando preços.<br><br>**Cria:** Erros 403 secos ou bloqueio acidental.<br><br>**Resposta:** Redirecionamento com mensagem flash.<br><br>**Gatilho:** Tentativa de acesso sem perfil adequado. | **Construir:** Configuração de permissões no `django.contrib.auth`.<br><br>**Dependência:** Nativo do framework. | **Competência:** Domínio nativo na equipe.<br><br>**Operação:** Seu Valmir administra acessos e perfis. |
-| **ADR-006: Servidor Gunicorn + WhiteNoise em Produção** | **Cria:** Configuração WSGI multi-worker, `collectstatic`, variáveis de produção e deploy contínuo.<br><br>**Elimina:** Necessidade de Nginx reverso dedicado na fase inicial e uso de `runserver` em prod. | **Dependências:** Sistema testado e variáveis configuradas antes do deploy.<br><br>**Paralelismo:** Preparação do ambiente cloud em paralelo aos testes.<br><br>**Caminho Crítico:** Sim. | **Implantação:** Setup de deploy automatizado.<br><br>**3 Anos:** Custo mensal de runtime PaaS/VM (~R$ 50 a R$ 100/mês). | **Mitiga:** Insegurança do servidor de testes em produção.<br><br>**Cria:** Falha de deploy por variáveis (`ALLOWED_HOSTS`).<br><br>**Resposta:** Checklist formal de deploy e smoke tests.<br><br>**Gatilho:** Retorno HTTP 400/500 no ambiente de homologação. | **Comprar:** Hospedagem gerenciada compatível com WSGI.<br><br>**Dependência:** Facilidade de troca entre PaaS (Render, Railway, Fly.io). | **Competência:** Conhecimento de deploy WSGI/Linux.<br><br>**Operação:** Monitoramento técnico de uptime e logs. |
+| **ADR-006: Servidor Gunicorn + WhiteNoise** | **Prevê:** Configuração WSGI, `collectstatic` e variáveis de produção.<br><br>**Elimina:** Necessidade de Nginx reverso dedicado nesta configuração inicial e uso de `runserver` em produção. | **Dependências:** Sistema testado e variáveis configuradas antes de eventual deploy.<br><br>**Paralelismo:** Preparação do ambiente cloud em paralelo aos testes.<br><br>**Caminho Crítico:** Sim. | **Implantação:** Setup de deploy automatizado previsto.<br><br>**3 Anos:** Estimativa de custo mensal de runtime PaaS/VM (~R$ 50 a R$ 100/mês). | **Mitiga:** Insegurança do servidor de testes em produção.<br><br>**Cria:** Falha de deploy por variáveis (`ALLOWED_HOSTS`).<br><br>**Resposta:** Checklist formal de deploy e smoke tests.<br><br>**Gatilho:** Retorno HTTP 400/500 no ambiente de homologação. | **Comprar:** Hospedagem gerenciada compatível com WSGI.<br><br>**Dependência:** Facilidade de troca entre PaaS (Render, Railway, Fly.io). | **Competência:** Conhecimento de deploy WSGI/Linux.<br><br>**Operação planejada:** Monitoramento técnico de uptime e logs. |
 
 ---
 
@@ -76,6 +78,8 @@ flowchart TD
 
 #### Dicionário da EAP (Detalhamento dos Pacotes conforme Anexo A)
 
+Os itens a seguir descrevem entregas e estimativas da linha de base do plano; não devem ser interpretados isoladamente como confirmação de conclusão. Consulte o roadmap para o estado conhecido da implementação.
+
 * **Pacote 1.1.1 — Modelos ORM e Banco Híbrido:**
   * *Entrega:* Modelos de dados em `models.py` mapeando `Cliente`, `Veiculo`, `Lavador`, `Servico`, `OrdemServico`, `Pagamento` com suporte a SQLite3 local e PostgreSQL em produção via `dj-database-url`.
   * *Decisão-Origem:* ADR-001 e ADR-002.
@@ -105,7 +109,7 @@ flowchart TD
   * *Depende de:* 1.1.1.
   * *Habilita:* 1.2.2.
 * **Pacote 1.2.2 — Módulo de Recepção e Gestão:**
-  * *Entrega:* Interface de guarita com busca rápida por placa, emissão de comprovantes de OS, painel administrativo de fechamento diário e visualização de impressão/PDF.
+  * *Entrega planejada:* Interface de guarita com busca por placa, painel administrativo de fechamento diário e página imprimível; comprovante individual de OS não está implementado.
   * *Decisão-Origem:* ADR-001 e ADR-004.
   * *Responsável:* Ednaldo Maciel.
   * *Estimativa PERT:* 10,8 dias ($O=6, M=10, P=19$).
@@ -126,14 +130,14 @@ flowchart TD
   * *Depende de:* 1.2.2 e 1.2.3.
   * *Habilita:* 1.3.3.
 * **Pacote 1.3.2 — Observabilidade e Rotina de Backup (Transição):**
-  * *Entrega:* Configuração de logs rotativos de erro do Django, alertas de falha HTTP 500 e script automatizado de backup do PostgreSQL.
+  * *Entrega planejada:* Configuração de logs rotativos, alertas de falha HTTP 500 e script de backup PostgreSQL. Esses controles não são fornecidos pelo repositório atualmente.
   * *Decisão-Origem:* ADR-002 e ADR-006.
   * *Responsável:* Ednaldo Maciel.
   * *Estimativa PERT:* 7,7 dias ($O=4, M=7, P=14$).
   * *Depende de:* 1.2.3.
   * *Habilita:* 1.3.3.
 * **Pacote 1.3.3 — Migração de Dados, Deploy e Homologação (Transição):**
-  * *Entrega:* Carga inicial dos dados reais do posto (`popular_banco`), deploy na nuvem com Gunicorn e WhiteNoise e teste ponta a ponta com a equipe.
+  * *Entrega planejada:* Carga inicial de dados autorizados, deploy na nuvem com Gunicorn e WhiteNoise e teste ponta a ponta com a equipe. `popular_banco` cria dados fictícios e não deve ser usado em produção.
   * *Decisão-Origem:* ADR-002 e ADR-006.
   * *Responsável:* Ednaldo Maciel.
   * *Estimativa PERT:* 13,2 dias ($O=7, M=12, P=24$).
@@ -145,9 +149,9 @@ flowchart TD
 ### 2.2 Cronograma, Dependências e Caminho Crítico
 
 #### Premissas do Cronograma
-* **Janela Temporal:** Início em 02/03/2026 e encerramento com Go-Live em 17/04/2026.
+* **Janela prevista na linha de base:** Início em 02/03/2026 e encerramento planejado com Go-Live em 17/04/2026; as datas são históricas do plano, não confirmação de implantação.
 * **Cadência de Produção:** Trabalho concentrado com foco de 15 a 20 horas úteis por semana.
-* **Marco Imóvel:** O Go-Live em 17/04/2026 é rígido (data acordada para início do ciclo de extensão e fechamento contábil). Congelamento formal de código (*Code Freeze*) em 15/04/2026.
+* **Marco planejado:** O plano previa Go-Live em 17/04/2026 e congelamento de código (*Code Freeze*) em 15/04/2026.
 
 #### Justificativa Detalhada das Dependências ("Por Quê")
 
@@ -159,7 +163,7 @@ flowchart TD
 | **1.1.2 (Regras) + 1.2.1 (RBAC) &rarr; 1.2.2 (Recepção/Gestão)** | A interface da recepção e gestão financeira precisa renderizar alertas de bloqueio da RN01 e proteger rotas administrativas através do decorador `@user_passes_test(is_admin)`. Construir telas antes das regras geraria retrabalho estético. |
 | **1.1.2 (Regras) &rarr; 1.2.3 (Painel Pátio)** | O avanço de etapas de pátio manipula diretamente o ciclo de vida do modelo `OrdemServico` (`FILA` &rarr; `LAVAGEM` &rarr; `SECAGEM` &rarr; `CONCLUIDO`). |
 | **1.2.2 + 1.2.3 &rarr; 1.3.1 (Capacitação)** | Não se capacita o usuário final (Seu Valmir, recepcionista e lavadores) sem as interfaces completas e validadas funcionalmente. |
-| **1.3.1 (Capacitação) + 1.3.2 (Observabilidade) &rarr; 1.3.3 (Deploy/Go-Live)** | Não se coloca um sistema em produção sem que a equipe saiba operá-lo e sem que a telemetria/rotina de backup esteja ativa. Subir sem observabilidade é assumir risco cego de falha em horário comercial. |
+| **1.3.1 (Capacitação) + 1.3.2 (Observabilidade) &rarr; 1.3.3 (Deploy/Go-Live)** | Critério de prontidão previsto na linha de base: treinamento, monitoramento e backup precisam ser configurados e validados antes de eventual implantação; não estão todos implementados no repositório. |
 
 #### Caminho Crítico e Paralelismo
 * **Caminho Crítico:**  
@@ -192,7 +196,7 @@ gantt
 
     section Marcos Imóveis
     Congelamento de Mudanças (Code Freeze)   :milestone, m1, 2026-04-15, 0d
-    Go-Live em Produção (Entrada Operacional):milestone, m2, 2026-04-17, 0d
+    Go-Live planejado (marco da linha de base):milestone, m2, 2026-04-17, 0d
 ```
 
 ---
@@ -259,7 +263,7 @@ $$\text{PERT} = \frac{O + 4M + P}{6}, \qquad \text{Desvio Padrão} \approx \frac
 
 | ID | Risco Identificado | Origem | Resposta Planejada | Gatilho Objetivo (Condição de Disparo) | Tipo de Reserva |
 | :---: | :--- | :--- | :--- | :--- | :---: |
-| **R01** | **Trava Semanal (RN01) falha ou bloqueia indevidamente frotas na virada de semana.** | Arquitetural (ADR-003) | **Mitigar:** Utilizar `timezone.localtime()` com `America/Manaus` e cobrir com 10 testes unitários automatizados em `tests.py`. | Detecção de erro em teste unitário de fronteira temporal ou reclamação de bloqueio indevido no primeiro teste de campo. | Contingência (Linha de Base) |
+| **R01** | **Trava Semanal (RN01) falha ou bloqueia indevidamente frotas na virada de semana.** | Arquitetural (ADR-003) | **Mitigação planejada:** Usar `timezone.localtime()` com `America/Manaus` e manter testes de fronteira temporal em `tests.py`. | Detecção de erro em teste unitário de fronteira temporal ou reclamação de bloqueio indevido no primeiro teste de campo. | Contingência (Linha de Base) |
 | **R02** | **Incompatibilidade de consultas ou erro de migração de SQLite3 para PostgreSQL.** | Arquitetural (ADR-002) | **Mitigar:** Executar suíte de homologação conectada diretamente a um banco PostgreSQL idêntico ao de produção antes do go-live. | Erro de migração (`psycopg2.OperationalError`) ou divergência de tipos em homologação. | Contingência (Linha de Base) |
 | **R03** | **Layout quebrado ou lentidão de carregamento do Tailwind CSS via CDN no pátio.** | Arquitetural (ADR-004) | **Mitigar:** Testar o painel em smartphone real conectado via rede 4G local; se oscilar, embutir o CSS estático minificado no WhiteNoise. | Queda de formatação visual ou tempo de carregamento da página superior a 3 segundos no smartphone. | Contingência (Linha de Base) |
 | **R04** | **Falha de deploy em produção por bloqueio de cabeçalhos CSRF ou ALLOWED_HOSTS.** | Projeto (ADR-006) | **Mitigar:** Executar checklist de deploy automatizado e manter arquivo de configuração documentado com rollback imediato. | Retorno de erro HTTP 400 (*Bad Request*) ou 403 (*CSRF verification failed*) no smoke test do ambiente staging. | Contingência (Linha de Base) |
@@ -286,7 +290,7 @@ No contexto de contratações públicas regidas pela Nova Lei de Licitações (L
 * **O que custaria sair (Tempo, Dinheiro e Reescrita):**
   * *Tempo de Migração:* **5 a 10 dias úteis** para provisionar nova VM ou outro provedor, configurar DNS e apontamentos de variáveis.
   * *Custo Financeiro de Saída:* Estimado em cerca de **R$ 150,00 a R$ 300,00** para sobreposição temporária de planos durante o período de transição.
-  * *O que teria de ser reescrito:* **Zero linhas de código de domínio**. A aderência às boas práticas de *Twelve-Factor App* e o desacoplamento de credenciais via `python-decouple` / `dj-database-url` garantem que o código Django é 100% agnóstico à plataforma de hospedagem. Para migrar, basta alterar a variável `DATABASE_URL` e os comandos padrão do Gunicorn.
+  * *O que teria de ser reescrito:* A aplicação usa variáveis de ambiente e `DATABASE_URL`, o que reduz o acoplamento, mas a migração ainda exige adaptar e validar configuração, serviços, dados e deploy no provedor de destino.
 
 ---
 
@@ -298,23 +302,23 @@ No contexto de contratações públicas regidas pela Nova Lei de Licitações (L
    * *Aplicação Prática no Plano:* Caso ocorra atraso nos pacotes de caminho crítico (como 1.2.2 ou 1.3.3), **a resposta jamais será convidar novos alunos ou desenvolvedores de fora**. O custo cognitivo de explicar a arquitetura, o padrão Django e as regras do negócio desviaria o tempo do desenvolvedor principal, piorando o atraso. Em caso de desvio, a resposta é a redução de escopo cosmético mantendo o foco nas regras centrais do MVP.
 2. **Lei de Conway (*"A arquitetura reflete a comunicação da organização"*):**
    * *Aplicação Prática no Plano:* A separação física e funcional do posto entre **Guarita de Recepção** (atendimento rápido a clientes), **Pátio Molhado** (trabalho braçal dos lavadores) e **Escritório Administrativo** (gestão de caixa do Seu Valmir) traduziu-se rigorosamente na divisão modular da aplicação Django: módulo de recepção (`/recepcao/`), módulo de pátio mobile (`/patio/`) e módulo de gerenciamento restrito (`/gerenciamento/`).
-3. **Tratamento da Competência Ausente (Capacitação como Pacote de Trabalho):**
-   * A capacitação dos colaboradores do posto não é um evento casual: ela é o **Pacote de Trabalho 1.3.1**, posicionado formalmente no caminho crítico da EAP e do cronograma, com 6,5 dias PERT estimados e dedicação de recursos específica.
+3. **Capacitação (como pacote de trabalho planejado):**
+   * O plano prevê capacitação dos colaboradores no **Pacote de Trabalho 1.3.1**, com 6,5 dias PERT estimados. A realização do treinamento precisa ser confirmada separadamente.
 
 #### Matriz de Papéis: Quem Faz e Quem Opera Depois
 
 | Papel / Ator | Responsabilidade na Construção / Implantação | Responsabilidade na Operação Contínua (Pós-Go-Live) |
 | :--- | :--- | :--- |
-| **Ednaldo Maciel da Silva**<br>*(Arquiteto e Desenvolvedor)* | Projeto arquitetural (C4 Model e ADRs), modelagem ORM, implementação de views, formulários, regras de negócio (RN01, RN02, RN03), testes unitários, automação de deploy e condução dos treinamentos. | Suporte técnico de segundo nível, monitoramento de logs e backups, aplicação de patches evolutivos e garantia de continuidade tecnológica. |
+| **Ednaldo Maciel da Silva**<br>*(Arquiteto e Desenvolvedor)* | Responsabilidades previstas: projeto arquitetural, implementação, testes, preparação de deploy e treinamento. | Suporte, monitoramento, backups e manutenção são responsabilidades propostas, não serviços operacionais comprovados. |
 | **Seu Valmir**<br>*(Proprietário e Administrador)* | Elicitação das regras de negócio, validação da tabela de preços e comissões, homologação das telas e participação nos testes de aceitação. | Operador do painel administrativo (`/gerenciamento/`), responsável pelo fechamento de caixa diário, resolução de divergências, gestão de usuários/senhas e cobrança de frotas conveniadas. |
-| **Recepcionista**<br>*(Atendente da Guarita)* | Participação nas sessões de usabilidade da recepção e simulação de atendimento com clientes avulsos e conveniados. | Operação cotidiana do módulo `/recepcao/`: cadastro rápido de veículos por placa, abertura de OS, emissão de comprovantes e recebimento de pagamentos na entrada ou retirada. |
-| **Lavadores do Pátio**<br>*(Equipe Operacional)* | Validação do fluxo de etapas em smartphones e feedback sobre legibilidade dos botões de avanço. | Operação do módulo `/patio/` via celular/tablet: acompanhamento da fila de espera e atualização do status de lavagem do veículo em tempo real (*Fila &rarr; Lavagem &rarr; Secagem &rarr; Concluído*). |
+| **Recepcionista**<br>*(Atendente da Guarita)* | Participação prevista em sessões de usabilidade da recepção e simulação de atendimento com clientes avulsos e faturados. | Uso previsto do módulo `/recepcao/`: busca por placa, cadastro e abertura de OS. Cliente avulso pode pagar no atendimento ou deixar pendente; faturados ficam pendentes para a empresa. Não há comprovante individual. |
+| **Lavadores do Pátio**<br>*(Equipe Operacional)* | Validação prevista do fluxo em dispositivos móveis e legibilidade dos controles. | Uso previsto do módulo `/patio/` via celular/tablet: acompanhar a fila e atualizar o status até `ENTREGUE`; a página mostra alterações mediante requisições HTTP, sem atualização push. |
 
 ---
 
 ## 3. Conclusão e Alinhamento com a Rubrica da Disciplina
 
-O plano de projeto apresentado cumpre 100% dos critérios da rubrica de avaliação de **Projetos de Sistemas (CIESA)**:
+O plano foi estruturado para abordar os critérios da rubrica de avaliação de **Projetos de Sistemas (CIESA)**; a nota ou validação formal depende da avaliação acadêmica:
 * **EAP Rastreável (25%):** Todos os pacotes decorrem das decisões ADR-001 a ADR-006, contemplando 3 níveis de detalhamento e pacotes explícitos de transição e eliminação.
 * **Cronograma e Caminho Crítico (20%):** Dependências tecnicamente justificadas com base na arquitetura, caminho crítico isolado, paralelismo e marcos imóveis declarados em diagrama de Gantt.
 * **Custo em Três Anos (20%):** Comparação realista entre Nuvem PaaS e VPS Linux com cálculo completo de implantação e operação anualizada em 3 anos.

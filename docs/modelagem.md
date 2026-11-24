@@ -17,7 +17,7 @@ A modelagem de dados deste projeto foi concebida para estruturar e automatizar o
 A modelagem segue as diretrizes clássicas da Engenharia de Dados e Bancos de Dados Relacionais:
 1. **Nível Conceitual (Modelo Entidade-Relacionamento - MER/DER):** Abstrai as regras e processos de negócio do pátio em entidades, atributos e relacionamentos com suas respectivas cardinalidades, fundamentado no modelo seminal de Peter Chen (1976).
 2. **Nível Lógico (Modelo Relacional e Normalização):** Converte o modelo conceitual para esquemas relacionais de tabelas, chaves primárias (PK), chaves estrangeiras (FK), restrições de integridade e demonstração de conformidade com a **Terceira Forma Normal (3FN)**, segundo Edgar F. Codd (1970).
-3. **Nível Físico / Mapeamento Objeto-Relacional (ORM):** Mapeamento 1:1 com as classes Python do Django ORM ([`backend/lavajato/models.py`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/backend/lavajato/models.py)) e com o script DDL SQL padrão ANSI ([`database/schema.sql`](file:///c:/Users/Ednaldo%20Maciel/projeto_posto_de_lavagem_ciesa/database/schema.sql)), operando sobre SQLite3 (Dev) e PostgreSQL (Prod) via `DATABASE_URL` (ADR-002).
+3. **Nível Físico / Mapeamento Objeto-Relacional (ORM):** As classes Django e suas migrações em `backend/lavajato/` são a fonte oficial do esquema. `database/schema.sql` é uma referência ilustrativa, não substitui nem é aplicada pelas migrações; `database/seed.sql` pertence a um esquema legado e não deve ser executado.
 
 ---
 
@@ -26,13 +26,13 @@ A modelagem segue as diretrizes clássicas da Engenharia de Dados e Bancos de Da
 | Requisito / Regra | Descrição no Negócio | Entidade / Coluna de Mapeamento |
 | :--- | :--- | :--- |
 | **RF01 / RNF05** | Controle de usuários com perfis distintos (Administrador vs Recepcionista). | `auth_user` e `auth_group` integrados via Django Auth. |
-| **RF02** | Cadastro e segmentação de clientes (Avulso vs Faturado / Convênio Corporativo). | Entidade `Cliente` (campo `tipo`: `AVULSO` ou `FATURADO`). |
+| **RF02** | Cadastro e segmentação de clientes e empresas faturadas. | Entidades `Cliente`, `EmpresaFaturada` e a FK opcional `Cliente.empresa_faturada` (obrigatória para clientes faturados pela validação do modelo). |
 | **RF02 / RN01** | Cadastro de veículos por placa e validação da regra de limite semanal (máx. 1 lavagem/sem). | Entidade `Veiculo` (campo `placa` `UNIQUE` e método `pode_lavar_esta_semana()`). |
 | **RF03** | Cadastro de lavadores e cálculo automático de comissão individual por serviço. | Entidade `Lavador` (campo `percentual_comissao`) e cálculo dinâmico na OS. |
 | **RF04 / RN03** | Tabela de serviços com valores base gerenciados exclusivamente pelo Administrador. | Entidade `Servico` (campos `valor`, `tempo_estimado_minutos`, `ativo`). |
-| **RF05** | Emissão e acompanhamento de Ordens de Serviço (OS) com estados em tempo real. | Entidade `OrdemServico` (`FILA`, `LAVAGEM`, `SECAGEM`, `CONCLUIDO`, `ENTREGUE`). |
-| **RF06 / RN02** | Registro de pagamentos com flexibilidade no momento de quitação (Entrada ou Retirada). | Entidade `Pagamento` (campos `momento_pagamento`, `forma_pagamento`, `status`). |
-| **RF07 / RF08** | Histórico por placa, fechamento de caixa diário e relatórios de auditoria/faturamento. | Consultas agregadas e índices de performance sobre `OrdemServico` e `Pagamento`. |
+| **RF05** | Emissão e acompanhamento de Ordens de Serviço (OS) com estados operacionais. | Entidade `OrdemServico` (`FILA`, `LAVAGEM`, `SECAGEM`, `CONCLUIDO`, `ENTREGUE`). |
+| **RF06 / RN02** | Pagamentos avulsos e faturamento por empresa. | Entidade `Pagamento`; OS faturada recebe forma `FATURADO`, status `PENDENTE`, e seu valor é consultado pela empresa associada ao cliente do veículo. |
+| **RF07 / RF08** | Busca por placa, fechamento de caixa e relatórios. | Consultas em `OrdemServico` e `Pagamento`; a tela de histórico completo por placa não está implementada. |
 
 ---
 
@@ -52,15 +52,28 @@ A modelagem segue as diretrizes clássicas da Engenharia de Dados e Bancos de Da
 
 ```mermaid
 erDiagram
+    EMPRESA_FATURADA o|--o{ CLIENTE : "fatura clientes vinculados"
     CLIENTE ||--o{ VEICULO : "possui / cadastra (1:N)"
     VEICULO ||--o{ ORDEM_SERVICO : "recebe atendimento (1:N)"
     SERVICO ||--o{ ORDEM_SERVICO : "compoe (1:N)"
     LAVADOR ||--o{ ORDEM_SERVICO : "executa servico (1:N)"
     USUARIO_OPERADOR ||--o{ ORDEM_SERVICO : "abre / registra (1:N)"
-    ORDEM_SERVICO ||--|| PAGAMENTO : "gera quitacao (1:1)"
+    ORDEM_SERVICO ||--o| PAGAMENTO : "possui registro financeiro"
+
+    EMPRESA_FATURADA {
+        int id PK
+        string nome UK
+        string documento
+        string telefone
+        string email
+        text observacoes
+        boolean ativo
+        datetime data_cadastro
+    }
 
     CLIENTE {
         int id PK
+        int empresa_faturada_id FK "opcional; obrigatório se FATURADO"
         string nome
         string tipo "AVULSO | FATURADO"
         string telefone
@@ -75,7 +88,7 @@ erDiagram
         int cliente_id FK
         string placa UK "ABC1234 / ABC1D23"
         string modelo
-        string marca
+        string marca "opcional"
         string cor
         string tipo_veiculo "Pequeno | Medio | SUV | Camionete"
     }
@@ -107,13 +120,13 @@ erDiagram
         text observacoes_veiculo
         decimal valor_total
         datetime data_hora "Entrada"
-        datetime data_hora_saida "Conclusao"
+        datetime data_hora_saida "Entrega ao cliente"
     }
 
     PAGAMENTO {
         int id PK
         int ordem_servico_id FK, UK
-        string forma_pagamento "PIX | DINHEIRO | CARTAO | FATURADO"
+        string forma_pagamento "PIX | DINHEIRO | CARTAO | FATURADO | PENDENTE"
         string momento_pagamento "ENTRADA | RETIRADA"
         string status "PENDENTE | CONCLUIDO"
         decimal valor_pago
@@ -131,12 +144,13 @@ erDiagram
 
 ### 3.3 Cardinalidades e Semântica de Negócio
 
-* **CLIENTE &rarr; VEICULO ($1:N$):** Um cliente pode possuir múltiplos veículos vinculados (situação típica de empresas de frota conveniada), mas cada veículo pertence a exatamente um cliente titular.
+* **EMPRESA_FATURADA &rarr; CLIENTE ($1:N$):** Uma empresa pode faturar serviços de vários cadastros de clientes. Cada cliente faturado aponta para uma empresa; o vínculo não é exigido para cliente avulso.
+* **CLIENTE &rarr; VEICULO ($1:N$):** Um cliente pode possuir múltiplos veículos vinculados, mas cada veículo pertence a exatamente um cliente titular.
 * **VEICULO &rarr; ORDEM_SERVICO ($1:N$):** Um veículo pode realizar diversos atendimentos ao longo do tempo. **Regra RN01:** Se o veículo pertencer a um cliente com `tipo = 'FATURADO'`, o motor do domínio restringe as instâncias de OS para no máximo 1 atendimento na mesma semana corrente (Segunda-feira a Domingo).
 * **SERVICO &rarr; ORDEM_SERVICO ($1:N$):** Um tipo de serviço de tabela pode ser solicitado em milhares de ordens de serviço. A alteração de valores de tabela afeta apenas novos lançamentos, preservando o valor histórico cobrado em `valor_total`.
 * **LAVADOR &rarr; ORDEM_SERVICO ($1:N$):** Um lavador executa diversas ordens de serviço ao longo do dia de trabalho. A alíquota cadastrada no lavador determina a apuração do valor de comissão (**RF03**).
 * **USUARIO_OPERADOR &rarr; ORDEM_SERVICO ($1:N$):** Um operador da recepção abre diversas ordens de serviço durante seu expediente.
-* **ORDEM_SERVICO &rarr; PAGAMENTO ($1:1$):** Cada Ordem de Serviço possui exatamente um registro financeiro acoplado. **Regra RN02:** O pagamento pode ser concluído imediatamente na abertura (`momento_pagamento = 'ENTRADA'`) ou registrado como pendente para quitação no resgate do veículo (`momento_pagamento = 'RETIRADA'`).
+* **ORDEM_SERVICO &rarr; PAGAMENTO ($1:0..1$ no esquema; 1 no fluxo da recepção):** O modelo permite OS sem pagamento associado, embora a recepção crie o registro ao abrir a OS. Para cliente avulso, pode ser pago na entrada ou ficar pendente para liquidação posterior; para cliente faturado, não há pagamento no atendimento e o valor fica lançado à empresa vinculada.
 
 ---
 
@@ -147,8 +161,9 @@ A modelagem lógica expressa a estrutura em formato relacional de tabelas, com d
 ### 4.1 Esquema Relacional Formal
 
 $$\begin{aligned}
-\text{\textbf{CLIENTE}} & (\underline{\text{id}}, \text{nome}, \text{tipo}, \text{telefone}, \text{documento}, \text{observacoes}, \text{ativo}, \text{data\_cadastro}) \\
-\text{\textbf{VEICULO}} & (\underline{\text{id}}, \text{cliente\_id}^*, \text{placa}^{\text{UQ}}, \text{modelo}, \text{marca}, \text{cor}, \text{tipo\_veiculo}) \\
+\text{\textbf{EMPRESA\_FATURADA}} & (\underline{\text{id}}, \text{nome}^{\text{UQ}}, \text{documento}, \text{telefone}, \text{email}, \text{observacoes}, \text{ativo}, \text{data\_cadastro}) \\
+\text{\textbf{CLIENTE}} & (\underline{\text{id}}, \text{empresa\_faturada\_id}^*, \text{nome}, \text{tipo}, \text{telefone}, \text{documento}, \text{observacoes}, \text{ativo}, \text{data\_cadastro}) \\
+\text{\textbf{VEICULO}} & (\underline{\text{id}}, \text{cliente\_id}^*, \text{placa}^{\text{UQ}}, \text{modelo}, \text{marca opcional}, \text{cor}, \text{tipo\_veiculo}) \\
 \text{\textbf{LAVADOR}} & (\underline{\text{id}}, \text{nome}, \text{cpf}, \text{telefone}, \text{percentual\_comissao}, \text{ativo}) \\
 \text{\textbf{SERVICO}} & (\underline{\text{id}}, \text{descricao}, \text{valor}, \text{tempo\_estimado\_minutos}, \text{ativo}) \\
 \text{\textbf{ORDEM\_SERVICO}} & (\underline{\text{id}}, \text{veiculo\_id}^*, \text{servico\_id}^*, \text{lavador\_id}^*, \text{usuario\_id}^*, \text{status}, \text{observacoes\_veiculo}, \text{valor\_total}, \text{data\_hora}, \text{data\_hora\_saida}) \\
@@ -168,7 +183,7 @@ A estrutura do banco de dados do *Lava Jato do Valmir* foi normalizada rigorosam
 * *Definição:* Todos os atributos contêm apenas valores atômicos e indivisíveis, sem tabelas aninhadas, vetores ou listas multivaloradas.
 * *Aplicação:*
   * Nomes, telefones, placas e valores estão decompostos em atributos elementares.
-  * Formas de pagamento, momentos de quitação e status do pátio são tratados por valores atômicos padronizados via restrições `CHECK` ou enums controlados.
+  * Formas de pagamento, momentos de quitação e status do pátio são valores atômicos controlados pelos `choices` do Django; esses `choices` não equivalem a restrições `CHECK` no banco.
   * Placas de veículos são limpas de máscaras e hifens (`ABC1234`), garantindo unicidade atômica.
 
 #### 2. Segunda Forma Normal (2FN)
@@ -188,14 +203,29 @@ A estrutura do banco de dados do *Lava Jato do Valmir* foi normalizada rigorosam
 
 ## 5. Dicionário de Dados Completo (Metadados Técnicos)
 
-### 5.1 Tabela: `lavajato_cliente` (ou `Cliente`)
+### 5.1 Tabela: `lavajato_empresafaturada` (`EmpresaFaturada`)
+Armazena empresas conveniadas que recebem a cobrança dos serviços associados aos clientes faturados.
+
+| Coluna | Tipo SQL | Tipo Django | Nulo | Restrições | Descrição / Regra de Negócio |
+| :--- | :--- | :--- | :---: | :--- | :--- |
+| `id` | `BIGINT` | `BigAutoField` | Não | `PRIMARY KEY` | Identificador da empresa. |
+| `nome` | `VARCHAR(120)` | `CharField` | Não | `UNIQUE` | Nome ou razão social da empresa. |
+| `documento` | `VARCHAR(25)` | `CharField` | Sim | — | CNPJ. |
+| `telefone` | `VARCHAR(20)` | `CharField` | Sim | — | Telefone / WhatsApp. |
+| `email` | `VARCHAR(254)` | `EmailField` | Sim | — | E-mail de contato. |
+| `observacoes` | `TEXT` | `TextField` | Sim | — | Condições ou observações do convênio. |
+| `ativo` | `BOOLEAN` | `BooleanField` | Não | `DEFAULT TRUE` | Empresas inativas não aparecem para novos cadastros na recepção. |
+| `data_cadastro` | `TIMESTAMP` | `DateTimeField` | Não | `DEFAULT timezone.now` | Data e hora do cadastro. |
+
+### 5.2 Tabela: `lavajato_cliente` (ou `Cliente`)
 Armazena os tomadores de serviço avulsos e clientes corporativos de frotas conveniadas.
 
 | Coluna | Tipo SQL | Tipo Django | Nulo | Restrições | Descrição / Regra de Negócio |
 | :--- | :--- | :--- | :---: | :--- | :--- |
 | `id` | `INTEGER / SERIAL` | `BigAutoField` | Não | `PRIMARY KEY` | Identificador único surrogate do cliente. |
+| `empresa_faturada_id` | `BIGINT` | `ForeignKey(EmpresaFaturada)` | Sim | `PROTECT`; obrigatória na validação quando tipo = FATURADO | Empresa para a qual serão lançadas as OSs desse cliente. |
 | `nome` | `VARCHAR(120)` | `CharField` | Não | — | Nome completo da pessoa física ou razão social. |
-| `tipo` | `VARCHAR(20)` | `CharField` | Não | `CHECK IN ('AVULSO', 'FATURADO')` | Segmentação comercial: `AVULSO` (padrão) ou `FATURADO` (sujeito à regra RN01). |
+| `tipo` | `VARCHAR(20)` | `CharField` | Não | `choices` no Django | Segmentação comercial: `AVULSO` (padrão) ou `FATURADO` (sujeito à regra RN01). |
 | `telefone` | `VARCHAR(20)` | `CharField` | Sim | — | Telefone ou WhatsApp para contato e aviso de veículo pronto. |
 | `documento` | `VARCHAR(25)` | `CharField` | Sim | — | CPF do titular ou CNPJ da empresa conveniada. |
 | `observacoes` | `TEXT` | `TextField` | Sim | — | Observações contratuais ou instruções específicas. |
@@ -204,22 +234,22 @@ Armazena os tomadores de serviço avulsos e clientes corporativos de frotas conv
 
 ---
 
-### 5.2 Tabela: `lavajato_veiculo` (ou `Veiculo`)
+### 5.3 Tabela: `lavajato_veiculo` (ou `Veiculo`)
 Registra os veículos atendidos no pátio e vinculados aos clientes.
 
 | Coluna | Tipo SQL | Tipo Django | Nulo | Restrições | Descrição / Regra de Negócio |
 | :--- | :--- | :--- | :---: | :--- | :--- |
 | `id` | `INTEGER / SERIAL` | `BigAutoField` | Não | `PRIMARY KEY` | Identificador único surrogate do veículo. |
 | `cliente_id` | `INTEGER` | `ForeignKey(Cliente)` | Não | `REFERENCES lavajato_cliente(id) ON DELETE CASCADE` | Cliente proprietário / responsável pelo veículo. |
-| `placa` | `VARCHAR(10)` | `CharField` | Não | `UNIQUE`, `INDEX` | Placa automotiva sem hifen, em maiúsculas (ex: `QZZ1A23`). |
+| `placa` | `VARCHAR(10)` | `CharField` | Não | `UNIQUE` (índice único) | Placa automotiva sem hífen, em maiúsculas (ex.: `QZZ1A23`). |
 | `modelo` | `VARCHAR(50)` | `CharField` | Não | — | Modelo comercial do veículo (ex.: Ônix, Hilux, Gol). |
-| `marca` | `VARCHAR(50)` | `CharField` | Não | — | Montadora / Fabricante (ex.: Chevrolet, Toyota, Volkswagen). |
+| `marca` | `VARCHAR(50)` | `CharField` | Não | `blank=True`, `default=''` | Fabricante opcional; não é solicitado no cadastro da recepção. |
 | `cor` | `VARCHAR(30)` | `CharField` | Sim | — | Cor predominante para facilitar localização no pátio. |
-| `tipo_veiculo` | `VARCHAR(30)` | `CharField` | Não | `CHECK IN (Pequeno, Médio, SUV, Caminhonete, Van, Outro)` | Porte automotivo para balizamento de preços e tempos. |
+| `tipo_veiculo` | `VARCHAR(30)` | `CharField` | Não | `choices` no Django | Porte do veículo. |
 
 ---
 
-### 5.3 Tabela: `lavajato_lavador` (ou `Lavador`)
+### 5.4 Tabela: `lavajato_lavador` (ou `Lavador`)
 Registra os profissionais de lavagem atuantes no pátio físico do posto.
 
 | Coluna | Tipo SQL | Tipo Django | Nulo | Restrições | Descrição / Regra de Negócio |
@@ -233,20 +263,20 @@ Registra os profissionais de lavagem atuantes no pátio físico do posto.
 
 ---
 
-### 5.4 Tabela: `lavajato_servico` (ou `Servico`)
+### 5.5 Tabela: `lavajato_servico` (ou `Servico`)
 Catálogo de serviços oferecidos pelo estabelecimento (gestão restrita ao Administrador — RN03).
 
 | Coluna | Tipo SQL | Tipo Django | Nulo | Restrições | Descrição / Regra de Negócio |
 | :--- | :--- | :--- | :---: | :--- | :--- |
 | `id` | `INTEGER / SERIAL` | `BigAutoField` | Não | `PRIMARY KEY` | Identificador único do serviço. |
 | `descricao` | `VARCHAR(100)` | `CharField` | Não | — | Nome do serviço (ex.: Lavagem Geral, Simples, Completa com Cera). |
-| `valor` | `DECIMAL(10,2)` | `DecimalField` | Não | `CHECK (valor >= 0)` | Preço base de tabela estipulado pelo Administrador. |
+| `valor` | `DECIMAL(10,2)` | `DecimalField` | Não | — | Preço base de tabela estipulado pelo Administrador. |
 | `tempo_estimado_minutos`| `INTEGER` | `PositiveIntegerField` | Não | `DEFAULT 30` | Tempo médio previsto de execução no pátio. |
 | `ativo` | `BOOLEAN` | `BooleanField` | Não | `DEFAULT TRUE` | Flag de disponibilidade no formulário de atendimento. |
 
 ---
 
-### 5.5 Tabela: `lavajato_ordemservico` (ou `OrdemServico`)
+### 5.6 Tabela: `lavajato_ordemservico` (ou `OrdemServico`)
 Entidade central que gerencia o fluxo de trabalho e eventos de atendimento.
 
 | Coluna | Tipo SQL | Tipo Django | Nulo | Restrições | Descrição / Regra de Negócio |
@@ -256,26 +286,26 @@ Entidade central que gerencia o fluxo de trabalho e eventos de atendimento.
 | `servico_id` | `INTEGER` | `ForeignKey(Servico)` | Não | `REFERENCES lavajato_servico(id) ON DELETE PROTECT` | Procedimento executado no veículo. |
 | `lavador_id` | `INTEGER` | `ForeignKey(Lavador)` | Não | `REFERENCES lavajato_lavador(id) ON DELETE PROTECT` | Lavador de pátio designado para o serviço (RF03). |
 | `usuario_id` | `INTEGER` | `ForeignKey(User)` | Não | `REFERENCES auth_user(id) ON DELETE PROTECT` | Atendente / Operador responsável pelo lançamento. |
-| `status` | `VARCHAR(30)` | `CharField` | Não | `CHECK IN ('FILA', 'LAVAGEM', 'SECAGEM', 'CONCLUIDO', 'ENTREGUE')` | Estado em tempo real do veículo no pátio físico. |
+| `status` | `VARCHAR(30)` | `CharField` | Não | `choices` no Django | Estado no pátio: Fila, Lavagem, Secagem, Concluído e Entregue. |
 | `observacoes_veiculo`| `TEXT` | `TextField` | Sim | — | Vistoria de entrada (avarias prévias, arranhões, pertences). |
-| `valor_total` | `DECIMAL(10,2)` | `DecimalField` | Sim | `CHECK (valor_total >= 0)` | Valor final cobrado (congela o valor do serviço na data). |
-| `data_hora` | `TIMESTAMP` | `DateTimeField` | Não | `DEFAULT timezone.now`, `INDEX` | Data e hora de entrada do veículo na oficina. |
-| `data_hora_saida` | `TIMESTAMP` | `DateTimeField` | Sim | — | Registro de conclusão do serviço e liberação do pátio. |
+| `valor_total` | `DECIMAL(10,2)` | `DecimalField` | Sim | — | Valor total da OS; preenchido com o valor do serviço quando não informado. |
+| `data_hora` | `TIMESTAMP` | `DateTimeField` | Não | `DEFAULT timezone.now` | Data e hora de entrada do veículo na oficina. |
+| `data_hora_saida` | `TIMESTAMP` | `DateTimeField` | Sim | — | Horário em que a OS é marcada como entregue ao cliente. |
 
 ---
 
-### 5.6 Tabela: `lavajato_pagamento` (ou `Pagamento`)
-Transações financeiras e controle de conciliação de caixa diário (RF06, RN02).
+### 5.7 Tabela: `lavajato_pagamento` (ou `Pagamento`)
+Registro de pagamento ou lançamento pendente/faturado (RF06, RN02).
 
 | Coluna | Tipo SQL | Tipo Django | Nulo | Restrições | Descrição / Regra de Negócio |
 | :--- | :--- | :--- | :---: | :--- | :--- |
 | `id` | `INTEGER / SERIAL` | `BigAutoField` | Não | `PRIMARY KEY` | Identificador único do pagamento. |
-| `ordem_servico_id` | `INTEGER` | `OneToOneField(OrdemServico)`| Não | `UNIQUE`, `REFERENCES lavajato_ordemservico(id) ON DELETE CASCADE` | Relação 1:1 estrita com a Ordem de Serviço liquidada. |
-| `forma_pagamento` | `VARCHAR(30)` | `CharField` | Não | `CHECK IN ('PIX', 'DINHEIRO', 'CARTAO', 'FATURADO')` | Modalidade financeira de recebimento. |
-| `momento_pagamento`| `VARCHAR(20)` | `CharField` | Não | `CHECK IN ('ENTRADA', 'RETIRADA')` | **Regra RN02:** Flexibilidade de quitação na entrada ou saída. |
-| `status` | `VARCHAR(20)` | `CharField` | Não | `CHECK IN ('PENDENTE', 'CONCLUIDO')` | Status da quitação (`PENDENTE` para pagamento na saída). |
-| `valor_pago` | `DECIMAL(10,2)` | `DecimalField` | Não | `CHECK (valor_pago >= 0)` | Montante financeiro pago e auditado. |
-| `data_pagamento` | `TIMESTAMP` | `DateTimeField` | Não | `DEFAULT timezone.now` | Timestamp do ato de quitação financeira. |
+| `ordem_servico_id` | `BIGINT` | `OneToOneField(OrdemServico)` | Não | `UNIQUE`, `CASCADE` | Relação 1:1 quando existe registro financeiro; o esquema permite OS sem pagamento associado. |
+| `forma_pagamento` | `VARCHAR(30)` | `CharField` | Não | `choices` no Django | `PIX`, `DINHEIRO`, `CARTAO`, `FATURADO` ou `PENDENTE`. |
+| `momento_pagamento`| `VARCHAR(20)` | `CharField` | Não | `choices` no Django | `ENTRADA` ou `RETIRADA`; faturados são lançados como `RETIRADA`, pendentes. |
+| `status` | `VARCHAR(20)` | `CharField` | Não | `choices` no Django | `PENDENTE` ou `CONCLUIDO`; independente da entrega física do veículo. |
+| `valor_pago` | `DECIMAL(10,2)` | `DecimalField` | Não | — | Valor associado à OS; em pagamentos pendentes/faturados não representa dinheiro já recebido. |
+| `data_pagamento` | `TIMESTAMP` | `DateTimeField` | Não | `DEFAULT timezone.now` | Data de criação/atualização do registro financeiro; não é um comprovante de recebimento. |
 
 ---
 
@@ -303,17 +333,6 @@ As regras de negócio mais complexas não foram relegadas apenas ao banco ou a f
 
 ### 6.3 Estratégia de Indexação e Desempenho (RNF03)
 
-Para assegurar que o tempo de resposta em consultas e buscas por placa na guarita de atendimento permaneça estritamente inferior a **2 segundos (RNF03)**, foram definidos os seguintes índices B-Tree:
+O limite de **2 segundos (RNF03)** é um requisito-alvo, não um resultado medido. O código garante unicidade da placa (com índice único) e o Django cria índices para chaves estrangeiras; não há índices explícitos de aplicação para `data_hora` ou `status`. A necessidade desses índices deve ser decidida após medição com volume representativo.
 
-```sql
--- Índices para busca ultra-rápida por placa na recepção
-CREATE INDEX idx_veiculo_placa ON lavajato_veiculo(placa);
-CREATE INDEX idx_veiculo_cliente ON lavajato_veiculo(cliente_id);
-
--- Índices para painel de pátio em tempo real e fechamento financeiro
-CREATE INDEX idx_os_data_hora ON lavajato_ordemservico(data_hora);
-CREATE INDEX idx_os_status ON lavajato_ordemservico(status);
-CREATE INDEX idx_os_veiculo ON lavajato_ordemservico(veiculo_id);
-```
-
-No Django ORM, as consultas críticas nos controladores utilizam a técnica `select_related('veiculo', 'servico', 'lavador', 'usuario')`, eliminando o problema clássico de $N+1$ consultas e trazendo todo o grafo de objetos em uma única consulta SQL otimizada.
+As views usam `select_related` em consultas apropriadas para reduzir consultas relacionadas; isso não comprova, por si só, o cumprimento do limite temporal.

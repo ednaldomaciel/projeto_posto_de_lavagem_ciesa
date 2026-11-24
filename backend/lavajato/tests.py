@@ -5,7 +5,8 @@ from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.urls import reverse
-from lavajato.models import Cliente, Veiculo, Lavador, Servico, OrdemServico, Pagamento
+from lavajato.models import EmpresaFaturada, Cliente, Veiculo, Lavador, Servico, OrdemServico, Pagamento
+from lavajato.forms import ClienteCadastroForm
 
 
 class RegrasDeNegocioTestCase(TestCase):
@@ -22,6 +23,7 @@ class RegrasDeNegocioTestCase(TestCase):
         self.cliente_faturado = Cliente.objects.create(
             nome='Empresa ABC Frotas',
             tipo='FATURADO',
+            empresa_faturada=EmpresaFaturada.objects.create(nome='Empresa ABC Frotas'),
             telefone='9233334444'
         )
 
@@ -57,6 +59,134 @@ class RegrasDeNegocioTestCase(TestCase):
             valor=Decimal('100.00'),
             tempo_estimado_minutos=60
         )
+
+    def test_recepcao_cadastra_cliente_faturado_e_veiculo(self):
+        empresa = EmpresaFaturada.objects.create(
+            nome='Transportadora Teste',
+            documento='11.222.333/0001-44',
+        )
+        client = Client()
+        client.force_login(self.user)
+
+        resposta_cliente = client.post(reverse('recepcao'), {
+            'acao': 'cadastrar_cliente',
+            'nome': 'Motorista Joao',
+            'tipo': 'FATURADO',
+            'empresa_faturada': empresa.id,
+            'telefone': '(92) 99999-0000',
+            'documento': '123.456.789-00',
+            'observacoes': 'Cadastro pela recepção',
+        })
+        self.assertEqual(resposta_cliente.status_code, 302)
+
+        cliente = Cliente.objects.get(nome='Motorista Joao')
+        self.assertEqual(cliente.empresa_faturada, empresa)
+
+        resposta_veiculo = client.post(reverse('recepcao'), {
+            'acao': 'cadastrar_veiculo',
+            'cliente': cliente.id,
+            'placa': 'rece101',
+            'modelo': 'Corolla',
+            'cor': 'Prata',
+            'tipo_veiculo': 'Médio',
+        })
+        self.assertEqual(resposta_veiculo.status_code, 302)
+
+        veiculo = Veiculo.objects.get(placa='RECE101')
+        self.assertEqual(veiculo.cliente, cliente)
+        self.assertEqual(veiculo.marca, '')
+
+    def test_busca_por_placa_exige_confirmacao_antes_da_os(self):
+        client = Client()
+        client.force_login(self.user)
+
+        resposta = client.get(reverse('recepcao'), {'placa': 'avu1234'})
+
+        self.assertContains(resposta, 'Selecionar veículo e continuar')
+        self.assertNotContains(resposta, 'Emitir Ordem de Serviço')
+
+        resposta_selecao = client.get(
+            reverse('recepcao'),
+            {'placa': 'AVU1234', 'selecionar': '1'},
+        )
+        self.assertContains(resposta_selecao, 'Emitir Ordem de Serviço')
+        self.assertContains(resposta_selecao, 'Marcar como pago agora')
+
+    def test_cliente_faturado_nao_paga_na_lavagem_mesmo_com_post_manipulado(self):
+        client = Client()
+        client.force_login(self.user)
+        url = f"{reverse('recepcao')}?placa={self.veiculo_faturado.placa}&selecionar=1"
+
+        resposta = client.get(url)
+        self.assertContains(resposta, self.cliente_faturado.empresa_faturada.nome)
+        self.assertNotContains(resposta, 'Marcar como pago agora')
+
+        resposta = client.post(url, {
+            'veiculo': self.veiculo_faturado.id,
+            'servico': self.servico_simples.id,
+            'lavador': self.lavador.id,
+            'observacoes_veiculo': '',
+            'pagamento_agora': 'on',
+            'forma_pagamento': 'PIX',
+        })
+
+        self.assertEqual(resposta.status_code, 302)
+        pagamento = OrdemServico.objects.latest('id').pagamento
+        self.assertEqual(pagamento.forma_pagamento, 'FATURADO')
+        self.assertEqual(pagamento.status, 'PENDENTE')
+
+    def test_os_pode_ser_registrada_com_pagamento_pendente_ou_pago(self):
+        client = Client()
+        client.force_login(self.user)
+        url = f"{reverse('recepcao')}?placa={self.veiculo_avulso.placa}&selecionar=1"
+        dados_os = {
+            'veiculo': self.veiculo_avulso.id,
+            'servico': self.servico_simples.id,
+            'lavador': self.lavador.id,
+            'observacoes_veiculo': '',
+        }
+
+        resposta_pendente = client.post(url, dados_os)
+        self.assertEqual(resposta_pendente.status_code, 302)
+        os_pendente = OrdemServico.objects.latest('id')
+        self.assertEqual(os_pendente.pagamento.status, 'PENDENTE')
+        self.assertEqual(os_pendente.pagamento.forma_pagamento, 'PENDENTE')
+
+        dados_pago = {
+            **dados_os,
+            'pagamento_agora': 'on',
+            'forma_pagamento': 'PIX',
+        }
+        resposta_pago = client.post(url, dados_pago)
+        self.assertEqual(resposta_pago.status_code, 302)
+        os_pago = OrdemServico.objects.latest('id')
+        self.assertEqual(os_pago.pagamento.status, 'CONCLUIDO')
+        self.assertEqual(os_pago.pagamento.forma_pagamento, 'PIX')
+
+    def test_cliente_faturado_exige_empresa_faturada(self):
+        form = ClienteCadastroForm(data={
+            'nome': 'Cliente conveniado',
+            'tipo': 'FATURADO',
+            'empresa_faturada': '',
+            'telefone': '',
+            'documento': '',
+            'observacoes': '',
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn('empresa_faturada', form.errors)
+
+    def test_busca_sem_placa_cadastrada_lista_apenas_empresas_ativas(self):
+        empresa_ativa = EmpresaFaturada.objects.create(nome='Frota Ativa')
+        EmpresaFaturada.objects.create(nome='Frota Inativa', ativo=False)
+        client = Client()
+        client.force_login(self.user)
+
+        resposta = client.get(reverse('recepcao'), {'placa': 'NOV1234'})
+
+        self.assertContains(resposta, '1. Tipo de cliente')
+        self.assertContains(resposta, empresa_ativa.nome)
+        self.assertNotContains(resposta, 'Frota Inativa')
 
     def test_rn01_bloqueio_segunda_lavagem_veiculo_faturado_na_mesma_semana(self):
         """
@@ -105,6 +235,35 @@ class RegrasDeNegocioTestCase(TestCase):
         self.assertIsNotNone(os1.id)
         self.assertIsNotNone(os2.id)
 
+    def test_patio_registra_entrega_ao_cliente_em_coluna_separada(self):
+        os = OrdemServico.objects.create(
+            veiculo=self.veiculo_avulso,
+            servico=self.servico_simples,
+            lavador=self.lavador,
+            usuario=self.user,
+            status='CONCLUIDO',
+        )
+        client = Client()
+        client.force_login(self.user)
+
+        resposta = client.get(reverse('patio'))
+        self.assertContains(resposta, 'Entregues ao cliente')
+        self.assertContains(resposta, 'Registrar entrega ao cliente')
+
+        resposta = client.post(reverse('patio'), {
+            'os_id': os.id,
+            'novo_status': 'ENTREGUE',
+        })
+
+        self.assertEqual(resposta.status_code, 302)
+        os.refresh_from_db()
+        self.assertEqual(os.status, 'ENTREGUE')
+        self.assertIsNotNone(os.data_hora_saida)
+
+        resposta = client.get(reverse('patio'))
+        self.assertContains(resposta, self.veiculo_avulso.placa)
+        self.assertContains(resposta, 'Entregue ao cliente')
+
     def test_rf03_calculo_comissao_lavador(self):
         """RF03: A comissão do lavador deve ser calculada baseada na taxa configurada."""
         os = OrdemServico.objects.create(
@@ -151,9 +310,11 @@ class RelatoriosGestaoTestCase(TestCase):
         self.recepcao_user.groups.add(grp_recepcao)
 
         # Clientes
+        self.empresa_faturada = EmpresaFaturada.objects.create(nome='Empresa Parceira de Frotas LTDA')
         self.cliente_corp = Cliente.objects.create(
             nome='Empresa Parceira de Frotas LTDA',
             tipo='FATURADO',
+            empresa_faturada=self.empresa_faturada,
             documento='11.222.333/0001-44',
             telefone='(92) 3300-1122'
         )
@@ -196,6 +357,26 @@ class RelatoriosGestaoTestCase(TestCase):
             valor_pago=Decimal('80.00')
         )
 
+        cliente_frota_adicional = Cliente.objects.create(
+            nome='Motorista da frota',
+            tipo='FATURADO',
+            empresa_faturada=self.empresa_faturada,
+        )
+        veiculo_frota_adicional = Veiculo.objects.create(
+            cliente=cliente_frota_adicional,
+            placa='CORP003',
+            modelo='Onix',
+        )
+        self.os_faturada_adicional = OrdemServico.objects.create(
+            veiculo=veiculo_frota_adicional,
+            servico=self.servico_geral,
+            lavador=self.lavador,
+            usuario=self.admin_user,
+            status='ENTREGUE',
+            valor_total=Decimal('50.00'),
+            data_hora=timezone.localtime(timezone.now()) - timedelta(days=1)
+        )
+
         # Cria OS corporativa faturada 2 (Pendente)
         self.os_faturada2 = OrdemServico.objects.create(
             veiculo=self.veiculo_corp2,
@@ -214,15 +395,15 @@ class RelatoriosGestaoTestCase(TestCase):
         data_ini = (self.hoje - timedelta(days=7)).strftime('%Y-%m-%d')
         data_fim = self.hoje.strftime('%Y-%m-%d')
 
-        url = f"{reverse('gerenciamento')}?tipo=faturado&cliente_id={self.cliente_corp.id}&data_inicio={data_ini}&data_fim={data_fim}"
+        url = f"{reverse('gerenciamento')}?tipo=faturado&empresa_id={self.empresa_faturada.id}&data_inicio={data_ini}&data_fim={data_fim}"
         res = self.client.get(url)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.context['tipo_relatorio'], 'faturado')
-        self.assertEqual(res.context['cliente_selecionado'], self.cliente_corp)
-        self.assertEqual(res.context['total_atendimentos'], 2)
-        self.assertEqual(res.context['total_faturamento'], Decimal('200.00'))
-        self.assertEqual(res.context['total_pendente'], Decimal('200.00'))
+        self.assertEqual(res.context['empresa_selecionada'], self.empresa_faturada)
+        self.assertEqual(res.context['total_atendimentos'], 3)
+        self.assertEqual(res.context['total_faturamento'], Decimal('250.00'))
+        self.assertEqual(res.context['total_pendente'], Decimal('250.00'))
 
     def test_impressao_fatura_empresa_faturada(self):
         """RF08: A tela de impressão pronta para cobrança deve renderizar dados do conveniado e valor a pagar."""
@@ -231,15 +412,16 @@ class RelatoriosGestaoTestCase(TestCase):
         data_ini = (self.hoje - timedelta(days=7)).strftime('%Y-%m-%d')
         data_fim = self.hoje.strftime('%Y-%m-%d')
 
-        url = f"{reverse('imprimir_relatorio')}?tipo=faturado&cliente_id={self.cliente_corp.id}&data_inicio={data_ini}&data_fim={data_fim}"
+        url = f"{reverse('imprimir_relatorio')}?tipo=faturado&empresa_id={self.empresa_faturada.id}&data_inicio={data_ini}&data_fim={data_fim}"
         res = self.client.get(url)
 
         self.assertEqual(res.status_code, 200)
         self.assertContains(res, 'DEMONSTRATIVO DE SERVIÇOS PARA FATURAMENTO CORPORATIVO')
-        self.assertContains(res, self.cliente_corp.nome)
+        self.assertContains(res, self.empresa_faturada.nome)
         self.assertContains(res, 'CORP001')
         self.assertContains(res, 'CORP002')
-        self.assertContains(res, '200,00')
+        self.assertContains(res, 'CORP003')
+        self.assertContains(res, '250,00')
 
     def test_relatorio_fechamento_diario(self):
         """RF08 / RN03: Relatório diário deve retornar status 200 e contexto do dia."""

@@ -209,7 +209,7 @@
                 <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
                     <i class="fa-solid fa-database text-4xl text-blue-400"></i>
                     <h3 class="font-bold text-white">Banco Híbrido</h3>
-                    <p class="text-xs text-slate-300 leading-relaxed">SQLite3 embarcado em DEV para zero setup e PostgreSQL robusto em produção via variáveis de ambiente.</p>
+                    <p class="text-xs text-slate-300 leading-relaxed">SQLite3 para desenvolvimento local e PostgreSQL configurável por variáveis de ambiente para implantação.</p>
                 </div>
                 <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
                     <i class="fa-solid fa-mobile-screen-button text-4xl text-emerald-400"></i>
@@ -219,12 +219,12 @@
                 <div class="bg-slate-800/70 p-5 rounded-2xl border border-slate-700 text-center space-y-3">
                     <i class="fa-solid fa-server text-4xl text-purple-400"></i>
                     <h3 class="font-bold text-white">Gunicorn & WhiteNoise</h3>
-                    <p class="text-xs text-slate-300 leading-relaxed">Servidor WSGI com compressão Brotli/Gzip para entrega de alta performance sem infraestrutura pesada.</p>
+                    <p class="text-xs text-slate-300 leading-relaxed">Servidor WSGI e serviço de arquivos estáticos para uma configuração simples de implantação.</p>
                 </div>
             </div>
 
             <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 flex items-center justify-between text-sm">
-                <span class="text-slate-300"><i class="fa-solid fa-shield-halved text-emerald-400 mr-2"></i> Proteção contra CSRF, XSS, Clickjacking e senhas armazenadas com hash PBKDF2 (720.000 iterações).</span>
+                <span class="text-slate-300"><i class="fa-solid fa-shield-halved text-emerald-400 mr-2"></i> Recursos de segurança do Django incluem proteção CSRF e armazenamento de senha com hash; mantenha a configuração de produção revisada.</span>
                 <span class="bg-emerald-950 text-emerald-300 text-xs px-3 py-1 rounded-full font-bold border border-emerald-800">12-Factor App</span>
             </div>
         </div>
@@ -246,7 +246,7 @@
                         <span class="text-xs bg-rose-950 text-rose-300 px-2.5 py-0.5 rounded font-bold border border-rose-800">Crítica</span>
                     </div>
                     <p class="text-sm text-slate-300 leading-relaxed">
-                        Veículos faturados possuem limite estrito de <strong>1 lavagem por semana</strong>. O método <code class="text-amber-300">pode_lavar_esta_semana()</code> consulta a semana corrente (segunda a domingo) e o método <code class="text-amber-300">clean()</code> bloqueia a persistência com <code class="text-rose-300">ValidationError</code>.
+                        Veículos faturados possuem limite de <strong>1 lavagem por semana</strong>. A recepção consulta a regra antes de criar a OS; o modelo também disponibiliza a validação <code class="text-amber-300">clean()</code>.
                     </p>
                 </div>
 
@@ -266,7 +266,7 @@
                         <span class="text-xs bg-blue-950 text-blue-300 px-2.5 py-0.5 rounded font-bold border border-blue-800">Atendimento</span>
                     </div>
                     <p class="text-sm text-slate-300 leading-relaxed">
-                        O cliente pode optar por pagar imediatamente na <strong>Entrada</strong> ou realizar a quitação no ato da <strong>Retirada</strong>. O sistema bloqueia a liberação até que o status conste como Concluído.
+                        Cliente avulso pode pagar no atendimento ou deixar o valor pendente para registro posterior. Cliente faturado não paga na lavagem: o valor fica pendente para a empresa vinculada. A entrega não depende do pagamento.
                     </p>
                 </div>
 
@@ -276,7 +276,7 @@
                         <span class="text-xs bg-amber-950 text-amber-300 px-2.5 py-0.5 rounded font-bold border border-amber-800">Segurança</span>
                     </div>
                     <p class="text-sm text-slate-300 leading-relaxed">
-                        Fechamento de caixa, relatórios de faturamento e alteração de preços de tabela restritos exclusivamente ao Administrador via decorador <code class="text-amber-300">@user_passes_test(is_admin)</code>.
+                        As telas de gerenciamento e impressão exigem perfil administrativo. Recepção e Pátio exigem login; não há separação por grupos nesses módulos.
                     </p>
                 </div>
             </div>
@@ -289,7 +289,7 @@
                     <span class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">06</span>
                     <h2 class="text-2xl md:text-3xl font-bold text-white">Módulos Operacionais Especializados</h2>
                 </div>
-                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Telas em Produção</span>
+                <span class="text-xs px-3 py-1 bg-slate-800 rounded-full text-slate-400 uppercase tracking-wider font-semibold">Módulos implementados</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -298,10 +298,10 @@
                         <i class="fa-solid fa-desktop"></i> Recepção & Guarita
                     </div>
                     <ul class="text-xs text-slate-300 space-y-2">
-                        <li>• Busca instantânea por placa em <strong>menos de 2 segundos</strong> (RNF03).</li>
-                        <li>• Auto-preenchimento dos dados do cliente e histórico.</li>
+                        <li>• Busca de veículo por placa e exibição dos dados cadastrados.</li>
+                        <li>• Cadastro de cliente e veículo durante o atendimento.</li>
                         <li>• Alerta visual imediato caso frota conveniada atinja o limite.</li>
-                        <li>• Emissão de comprovante de atendimento com 1 clique.</li>
+                        <li>• Registro financeiro associado à OS, conforme tipo de cliente.</li>
                     </ul>
                 </div>
 
@@ -311,9 +311,9 @@
                     </div>
                     <ul class="text-xs text-slate-300 space-y-2">
                         <li>• Interface adaptada para smartphones e tablets no pátio.</li>
-                        <li>• Botões táteis grandes (*touch-friendly*) para mãos molhadas.</li>
-                        <li>• Transição direta: <span class="text-amber-300 font-bold">Fila &rarr; Lavagem &rarr; Secagem &rarr; Concluído</span>.</li>
-                        <li>• Timestamp automático de saída para controle de SLA.</li>
+                        <li>• Interface responsiva com controles para atualizar o status.</li>
+                        <li>• Etapas: <span class="text-amber-300 font-bold">Fila &rarr; Lavagem &rarr; Secagem &rarr; Concluído &rarr; Entregue</span>.</li>
+                        <li>• Registro da data e hora ao marcar a entrega.</li>
                     </ul>
                 </div>
 
@@ -325,7 +325,7 @@
                         <li>• Fechamento diário de caixa consolidado com lucro líquido.</li>
                         <li>• Extrato individual de comissões por lavador.</li>
                         <li>• Relatório de clientes faturados com seletor de período.</li>
-                        <li>• Layout otimizado para impressão A4 e exportação PDF.</li>
+                        <li>• Relatórios HTML imprimíveis pelo navegador; sem geração de PDF no servidor.</li>
                     </ul>
                 </div>
             </div>
@@ -338,13 +338,13 @@
                     <span class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">07</span>
                     <h2 class="text-2xl md:text-3xl font-bold text-white">Engenharia e Testes Automatizados</h2>
                 </div>
-                <span class="text-xs px-3 py-1 bg-emerald-950 text-emerald-300 rounded-full font-bold border border-emerald-800">100% Sucesso (10/10)</span>
+                <span class="text-xs px-3 py-1 bg-emerald-950 text-emerald-300 rounded-full font-bold border border-emerald-800">Testes Django</span>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
                 <div class="space-y-3">
                     <p class="text-sm text-slate-300 leading-relaxed">
-                        A integridade do sistema é garantida por uma bateria de <strong>10 testes automatizados</strong> implementados com o test-runner do Django:
+                        A suíte de testes do Django cobre cenários selecionados da aplicação; a contagem exibida deve corresponder à execução atual:
                     </p>
                     <div class="space-y-2 text-xs">
                         <div class="flex items-center gap-2 p-2.5 bg-slate-800/70 rounded-lg border border-slate-700">
@@ -370,11 +370,11 @@
                     <div class="text-slate-500"># Execução dos testes automatizados</div>
                     <div class="text-emerald-400">$ python manage.py test lavajato</div>
                     <div class="text-slate-400">Creating test database for alias 'default'...</div>
-                    <div class="text-slate-400">..........</div>
+                    <div class="text-slate-400">[saída resumida]</div>
                     <div class="text-slate-500">------------------------------------------------------</div>
-                    <div class="text-emerald-300 font-bold">Ran 10 tests in 7.421s</div>
-                    <div class="text-emerald-400 font-black text-sm">OK</div>
-                    <div class="text-slate-500">System check identified no issues (0 silenced).</div>
+                    <div class="text-emerald-300 font-bold">Ran 17 tests</div>
+                    <div class="text-emerald-400 font-black text-sm">OK (última execução local)</div>
+                    <div class="text-slate-500">System check: nenhum problema identificado.</div>
                 </div>
             </div>
         </div>
@@ -438,32 +438,28 @@
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
                 <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
-                    <div class="text-3xl font-black text-rose-400 line-through">4 min</div>
-                    <div class="text-4xl font-black text-emerald-400">&lt; 45s</div>
-                    <div class="text-xs font-semibold text-slate-300">Tempo de Atendimento na Recepção</div>
+                    <div class="text-3xl font-black text-emerald-400">Busca</div>
+                    <div class="text-xs font-semibold text-slate-300">Localização de veículos pela placa</div>
                 </div>
 
                 <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
-                    <div class="text-3xl font-black text-rose-400 line-through">Frequente</div>
-                    <div class="text-4xl font-black text-emerald-400">0%</div>
-                    <div class="text-xs font-semibold text-slate-300">Divergências em Comissões de Pátio</div>
+                    <div class="text-3xl font-black text-emerald-400">Cálculo</div>
+                    <div class="text-xs font-semibold text-slate-300">Comissão calculada pela OS</div>
                 </div>
 
                 <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
-                    <div class="text-3xl font-black text-rose-400 line-through">Glosas</div>
-                    <div class="text-4xl font-black text-emerald-400">Zero</div>
-                    <div class="text-xs font-semibold text-slate-300">Perdas com Frotas Conveniadas (RN01)</div>
+                    <div class="text-3xl font-black text-emerald-400">Validação</div>
+                    <div class="text-xs font-semibold text-slate-300">Limite semanal para veículos faturados</div>
                 </div>
 
                 <div class="bg-slate-800/80 p-5 rounded-2xl border border-slate-700 text-center space-y-2">
-                    <div class="text-3xl font-black text-rose-400 line-through">Papéis</div>
-                    <div class="text-4xl font-black text-emerald-400">100%</div>
-                    <div class="text-xs font-semibold text-slate-300">Fluxos Operacionais Digitalizados</div>
+                    <div class="text-3xl font-black text-emerald-400">Quadro</div>
+                    <div class="text-xs font-semibold text-slate-300">Acompanhamento de status até a entrega</div>
                 </div>
             </div>
 
             <div class="p-4 bg-slate-800/50 rounded-xl border border-slate-700 text-center text-sm text-slate-300">
-                <strong class="text-emerald-400">Seu Valmir (Proprietário):</strong> "Agora fecho o dia em 2 minutos e não tenho mais nenhuma confusão com os lavadores na hora de pagar as comissões."
+                Os resultados quantitativos dependem de validação em operação real; os recursos apresentados são funcionalidades disponíveis no código.
             </div>
         </div>
 

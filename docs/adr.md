@@ -5,7 +5,7 @@
 * **Curso:** Ciência da Computação  
 * **Autor:** Ednaldo Maciel da Silva  
 * **Data de Elaboração:** Novembro / 2026  
-* **Status Geral:** Aprovado e Implementado  
+* **Status Geral:** Decisões registradas; a implementação e as pendências operacionais são descritas em cada ADR e no roadmap.
 
 ---
 
@@ -77,20 +77,20 @@ Adotar a biblioteca `dj-database-url` e `python-decouple` para desacoplar a cone
 
 ---
 
-### ADR-003: Centralização das Regras de Negócio (RN01, RN02 e RF03) no Domínio/ORM
+### ADR-003: Regras de Negócio no Domínio/ORM e nos Fluxos da Aplicação
 
 #### 1. Contexto e Problema
 O negócio do Lava Jato possui regras estritas levantadas em entrevista:
 * **RN01:** Veículos de clientes conveniados/faturados possuem limite estrito de no máximo 1 lavagem por semana.
-* **RN02:** Flexibilidade de pagamento no momento da entrada ou da retirada.
+* **RN02:** Pagamento avulso na entrada ou registro para recebimento posterior; clientes faturados não pagam no atendimento.
 * **RF03:** Cálculo do repasse de comissões por lavador de acordo com alíquota individual.
 Se essas regras fossem implementadas unicamente no frontend ou espalhadas nas Views HTTP, haveria alto risco de inconsistência caso uma OS fosse aberta via Django Admin, API ou script de automação.
 
 #### 2. Decisão Arquitetural
 Centralizar a validação e o cálculo das regras no núcleo do domínio (Camada Model / ORM):
-1. **Validação da RN01:** Método `pode_lavar_esta_semana()` no modelo `Veiculo` e validação no método `clean()` de `OrdemServico`, lançando `ValidationError` caso haja duplicidade na semana corrente (Segunda a Domingo).
-2. **Cálculo da RF03:** Propriedade calculada `valor_comissao` em `OrdemServico`, que multiplica a base monetária pelo percentual individual do lavador.
-3. **Flexibilidade RN02:** Modelo `Pagamento` desacoplado por relação 1-para-1 com campos `momento_pagamento` (`ENTRADA` / `RETIRADA`) e `status` (`PENDENTE` / `CONCLUIDO`).
+1. **Validação da RN01:** Método `pode_lavar_esta_semana()` no modelo `Veiculo` e validação no método `clean()` de `OrdemServico`, lançando `ValidationError` caso haja duplicidade na semana corrente.
+2. **Cálculo da RF03:** Propriedade `valor_comissao` em `OrdemServico`, baseada no valor da OS e no percentual individual do lavador.
+3. **Fluxo RN02:** A view da recepção decide se o pagamento avulso é imediato ou pendente. Para cliente faturado, cria lançamento `FATURADO` com status pendente; o relatório filtra e totaliza pela empresa vinculada ao cliente.
 
 #### 3. Alternativas Consideradas
 * **Validação apenas no Frontend JavaScript:**
@@ -100,8 +100,8 @@ Centralizar a validação e o cálculo das regras no núcleo do domínio (Camada
 
 #### 4. Consequências
 * **Positivas:**
-  * A regra é respeitada invariavelmente em qualquer canal (Telas, Django Admin, Shell e Testes).
-  * Cobertura 100% automatizável através de `TestCase` em `backend/lavajato/tests.py`.
+  * A validação RN01 ocorre no modelo ao salvar OS pelo fluxo que chama `save()`; a suíte contém testes para os fluxos cobertos.
+  * A suíte de testes do Django valida cenários selecionados; ela não representa prova de cobertura integral do sistema.
 * **Negativas / Mitigações:**
   * Exige cuidado com fuso horário local (`America/Manaus` - UTC-4) para garantir que a virada de semana ocorra pontualmente às 00:00 da segunda-feira.
 
@@ -116,7 +116,7 @@ O sistema possui dois públicos de usuários com dispositivos distintos:
 
 #### 2. Decisão Arquitetural
 Construir a interface utilizando **Tailwind CSS via CDN** e **FontAwesome 6**, com templates modulares herdados de `backend/templates/base.html`:
-* O **Painel do Pátio (`patio.html`)** foi projetado sob abordagem **Mobile-First**, com botões táteis grandes (touch-friendly) para avanço de status (Fila ➔ Lavagem ➔ Secagem ➔ Concluído).
+* O **Painel do Pátio (`patio.html`)** usa layout responsivo e botões para avanço de status (Fila ➔ Lavagem ➔ Secagem ➔ Concluído ➔ Entregue).
 * Os **Painéis de Recepção e Gerenciamento** utilizam grid responsivo com tabelas completas para computadores de mesa.
 
 #### 3. Alternativas Consideradas
@@ -128,9 +128,9 @@ Construir a interface utilizando **Tailwind CSS via CDN** e **FontAwesome 6**, c
 #### 4. Consequências
 * **Positivas:**
   * Zero dependências de Node.js no repositório do projeto.
-  * Carregamento ultra-rápido com CDN de alta disponibilidade e caching no navegador.
+  * Evita configurar uma etapa de build front-end.
 * **Negativas / Mitigações:**
-  * Requer conexão ativa com a internet para carregar estilos e ícones (cenário padrão em aplicações web modernas).
+  * Requer conexão ativa com a internet para carregar Tailwind CSS e ícones por CDN; a aplicação não possui modo offline.
 
 ---
 
@@ -143,7 +143,7 @@ Requisito **RNF05** e regra **RN03**: Acesso a informações financeiras, altera
 Utilizar o mecanismo nativo de **Role-Based Access Control (RBAC)** do Django (`django.contrib.auth`):
 * Grupos de usuários: `Administrador` e `Recepcionista`.
 * Proteção de views sensíveis (ex: `/gerenciamento/`) através do decorador `@user_passes_test(is_admin)`.
-* Tela de autenticação unificada (`/login/`) com suporte a login com credenciais criptografadas (PBKDF2) e atalhos rápidos de demonstração para a banca avaliadora.
+* Tela de autenticação unificada (`/login/`) usando o mecanismo de hash de senhas do Django. Não há atalhos de login rápido na tela.
 
 #### 3. Alternativas Consideradas
 * **Implementação manual de tabelas de autenticação e senhas:**
@@ -151,8 +151,8 @@ Utilizar o mecanismo nativo de **Role-Based Access Control (RBAC)** do Django (`
 
 #### 4. Consequências
 * **Positivas:**
-  * Segurança corporativa auditada e testada pela comunidade Django.
-  * Integração transparente com permissões em nível de modelo no Django Admin.
+  * Reutiliza autenticação e permissões fornecidas pelo Django.
+  * O acesso ao gerenciamento é testado em cenários específicos; revisar os grupos e permissões do Django Admin na implantação.
 * **Negativas / Mitigações:**
   * Usuários não autorizados que tentam acessar `/gerenciamento/` são redirecionados automaticamente para `/recepcao/` com mensagens flash explicativas.
 
@@ -164,8 +164,8 @@ Utilizar o mecanismo nativo de **Role-Based Access Control (RBAC)** do Django (`
 Em ambiente de produção (nuvem em PaaS como Render, Railway ou Fly.io), o servidor WSGI precisa disponibilizar arquivos estáticos (CSS, imagens, fontes) com alta performance, compactação e expiração de cache sem depender obrigatoriamente de um servidor Nginx dedicado ou de buckets em nuvem (AWS S3) para projetos de médio porte.
 
 #### 2. Decisão Arquitetural
-* **Servidor de Aplicação:** **Gunicorn (Green Unicorn)** em ambiente Unix/Linux de produção com múltiplos workers assíncronos.
-* **Serviço de Estáticos:** Middleware **WhiteNoise** integrado ao Django com `CompressedManifestStaticFilesStorage`, habilitando compressão Gzip/Brotli e hashing único para cache estático perpétuo.
+* **Servidor de Aplicação:** **Gunicorn (Green Unicorn)** em ambiente Unix/Linux. O comando de inicialização determina os workers; o `Procfile` não configura múltiplos workers explicitamente.
+* **Serviço de Estáticos:** Middleware **WhiteNoise** integrado ao Django com `CompressedManifestStaticFilesStorage`, habilitando arquivos estáticos comprimidos e com nomes versionados por hash.
 
 #### 3. Alternativas Consideradas
 * **Nginx dedicado como proxy reverso para estáticos:**
@@ -173,8 +173,8 @@ Em ambiente de produção (nuvem em PaaS como Render, Railway ou Fly.io), o serv
 
 #### 4. Consequências
 * **Positivas:**
-  * A aplicação é completamente auto-contida e faz deploy com um simples comando em nuvem.
-  * Performance superior com arquivos compactados e sem overhead de requisições desnecessárias.
+  * A aplicação usa WhiteNoise para servir estáticos sem exigir Nginx dedicado nesta configuração.
+  * Arquivos estáticos da aplicação podem ser servidos pelo WhiteNoise; estilos e ícones carregados por CDN continuam dependendo de conexão externa.
 * **Negativas / Mitigações:**
   * O Gunicorn é incompatível com o sistema operacional Windows local, motivo pelo qual o desenvolvimento local utiliza nativamente o servidor embutido `python manage.py runserver`.
 
@@ -186,22 +186,22 @@ Em ambiente de produção (nuvem em PaaS como Render, Railway ou Fly.io), o serv
 A administração do posto (Seu Valmir) necessita apurar o fluxo financeiro sob diferentes perspectivas operacionais: fechamento de caixa diário, consolidação mensal com ticket médio, extrato de comissões por lavador e, primordialmente, emitir demonstrativos de cobrança e faturamento para empresas conveniadas (`FATURADO`) com filtragem por período arbitrário (quinzenal, mensal, etc.). Além disso, é indispensável que a fatura gerada possa ser impressa em papel ou exportada em PDF com diagramação formal e sem elementos visuais da interface web (botões, menus, barras).
 
 #### 2. Decisão Arquitetural
-1. **Centralização Paramétrica de Relatórios:** Expandir a view `gerenciamento_view` (`/gerenciamento/`) para receber o parâmetro `tipo` (`diario`, `mensal`, `comissoes`, `faturado`), realizando as agregações e filtros diretamente no ORM com queries otimizadas (`select_related`, `Sum`, `Count`).
+1. **Centralização Paramétrica de Relatórios:** A view `gerenciamento_view` (`/gerenciamento/`) recebe `tipo` (`diario`, `mensal`, `comissoes`, `faturado`). No relatório `faturado`, o filtro seleciona `EmpresaFaturada` e agrega OSs dos clientes vinculados.
 2. **Abas Interativas na Interface:** Implementar navegação por abas estilizadas com Tailwind CSS, permitindo alternar instantaneamente entre as categorias de relatório.
-3. **Mecanismo de Impressão Nativo Print-Friendly:** Criar a view `imprimir_relatorio_view` (`/gerenciamento/imprimir/`) associada ao template `relatorio_impressao.html`, aplicando regras de estilo CSS `@media print` no formato padrão folha A4. O template renderiza um demonstrativo mercantil contendo dados do prestador (Lava Jato), dados do tomador (empresa conveniada), tabela discriminada de ordens de serviço, dados bancários/PIX para pagamento e espaço para assinatura e protocolo de aceite mútuo.
+3. **Mecanismo de Impressão Print-Friendly:** A view `imprimir_relatorio_view` (`/gerenciamento/imprimir/`) renderiza `relatorio_impressao.html` com estilos para impressão. A saída é uma página HTML que o usuário pode imprimir ou salvar em PDF no navegador; os dados do estabelecimento e bancários atuais são exemplos no código e precisam ser conferidos antes de uso comercial.
 
 #### 3. Alternativas Consideradas
 * **Geração de PDF no Servidor via WeasyPrint ou ReportLab:**
-  * *Motivo da rejeição:* WeasyPrint exige dependências de sistema C pesadas (GTK+, Pango, Cairo) que frequentemente causam quebras de instalação no Windows e incompatibilidades de ambiente. A abordagem print-friendly baseada em HTML/CSS nativo do navegador é 100% portável, leve e permite visualização prévia antes da impressão.
+  * *Motivo da rejeição:* WeasyPrint exige dependências de sistema adicionais. A abordagem print-friendly baseada em HTML/CSS permite visualização e impressão pelo navegador, sem adicionar uma biblioteca de PDF ao projeto.
 * **Telas separadas com lógicas desconectadas:**
   * *Motivo da rejeição:* Fragmentaria a experiência do administrador. A estrutura unificada por abas no módulo de Gestão mantém a coesão do sistema.
 
 #### 4. Consequências
 * **Positivas:**
   * Zero dependências binárias adicionais no ambiente virtual Python (`venv`).
-  * Geração instantânea de demonstrativos comerciais profissionais prontos para impressão ou salvamento em PDF nativo pelo navegador.
-  * Cobertura completa de testes automatizados com validação de status HTTP 200, contexto e bloqueio de usuários não autorizados (RN03).
+  * Página de demonstrativo imprimível ou salvável em PDF pela opção do navegador; os dados comerciais de exemplo devem ser revisados antes de uso real.
+  * Testes automatizados verificam status HTTP, contexto e bloqueio de usuários sem perfil administrativo em cenários específicos.
 * **Negativas / Mitigações:**
-  * A exportação para PDF depende da funcionalidade "Salvar como PDF" do navegador do cliente, que atualmente é padrão em 100% dos navegadores modernos (Chrome, Edge, Firefox, Safari).
+  * A exportação para PDF depende da opção de impressão/salvamento disponível no navegador do usuário.
 
 

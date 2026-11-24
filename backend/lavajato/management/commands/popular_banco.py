@@ -4,7 +4,7 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
-from lavajato.models import Cliente, Veiculo, Lavador, Servico, OrdemServico, Pagamento
+from lavajato.models import EmpresaFaturada, Cliente, Veiculo, Lavador, Servico, OrdemServico, Pagamento
 
 
 class Command(BaseCommand):
@@ -52,13 +52,30 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Recepcionista criada: usuario="juliana" / senha="recepcao123"'))
 
         # 2. Clientes (RF02)
+        empresa_frota_segura, _ = EmpresaFaturada.objects.get_or_create(
+            nome='Empresa Frota Segura LTDA',
+            defaults={
+                'documento': '12.345.678/0001-99',
+                'telefone': '(92) 3622-4455',
+                'observacoes': 'Convênio corporativo semanal / Faturamento quinzenal',
+            },
+        )
+        empresa_transportes, _ = EmpresaFaturada.objects.get_or_create(
+            nome='Transportes & Logística AM',
+            defaults={
+                'documento': '98.765.432/0001-11',
+                'telefone': '(92) 3234-8899',
+                'observacoes': 'Frota corporativa faturada mensalmente',
+            },
+        )
+
         c1, _ = Cliente.objects.get_or_create(
             nome='Marcos Antônio Oliveira',
             defaults={'tipo': 'AVULSO', 'telefone': '(92) 99111-2233', 'documento': '123.456.789-00', 'observacoes': 'Cliente preferencial matutino'}
         )
         c2, _ = Cliente.objects.get_or_create(
             nome='Empresa Frota Segura LTDA',
-            defaults={'tipo': 'FATURADO', 'telefone': '(92) 3622-4455', 'documento': '12.345.678/0001-99', 'observacoes': 'Convênio corporativo semanal / Faturamento quinzenal'}
+            defaults={'tipo': 'FATURADO', 'empresa_faturada': empresa_frota_segura, 'telefone': '(92) 3622-4455', 'documento': '12.345.678/0001-99', 'observacoes': 'Convênio corporativo semanal / Faturamento quinzenal'}
         )
         c3, _ = Cliente.objects.get_or_create(
             nome='Ana Beatriz Souza',
@@ -66,7 +83,7 @@ class Command(BaseCommand):
         )
         c4, _ = Cliente.objects.get_or_create(
             nome='Transportes & Logística AM',
-            defaults={'tipo': 'FATURADO', 'telefone': '(92) 3234-8899', 'documento': '98.765.432/0001-11', 'observacoes': 'Frota corporativa faturada mensalmente'}
+            defaults={'tipo': 'FATURADO', 'empresa_faturada': empresa_transportes, 'telefone': '(92) 3234-8899', 'documento': '98.765.432/0001-11', 'observacoes': 'Frota corporativa faturada mensalmente'}
         )
 
         # 3. Veículos (RF02)

@@ -1,6 +1,9 @@
 -- ============================================================
--- SCRIPT DE CARGA INICIAL E DADOS FICTÍCIOS DE TESTE (SEED)
--- Sistema de Gerenciamento de Posto de Lavagem
+-- LEGADO: este seed usa tabelas de uma versão anterior do projeto e
+-- NÃO é compatível com o esquema Django atual. Não execute este arquivo.
+-- Para dados fictícios apenas no desenvolvimento local, use:
+--     python manage.py popular_banco
+-- Nunca execute o comando de demonstração em produção.
 -- ============================================================
 
 -- 1. INSERIR USUÁRIOS DO SISTEMA

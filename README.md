@@ -11,8 +11,8 @@ Sistema web para gestão operacional e financeira de um posto de lavagem automot
 - Login com perfis de administrador e recepcionista.
 - Cadastro e consulta de clientes, veículos, lavadores e serviços.
 - Criação e acompanhamento de ordens de serviço.
-- Controle do pátio com os status de fila, lavagem, concluído e entregue.
-- Registro de pagamentos em entrada ou retirada.
+- Quadro operacional do pátio: fila, lavagem, secagem, concluído e entregue ao cliente.
+- Pagamento imediato ou posterior para clientes avulsos; clientes faturados não pagam no atendimento e têm os serviços lançados para a empresa vinculada.
 - Cálculo de comissões dos lavadores.
 - Controle de clientes avulsos e faturados.
 - Bloqueio automático de uma segunda lavagem semanal para veículos faturados (RN01).
@@ -25,7 +25,7 @@ Sistema web para gestão operacional e financeira de um posto de lavagem automot
 - Python 3.11+
 - Django 5.1+
 - SQLite em desenvolvimento
-- PostgreSQL em produção
+- PostgreSQL configurável por `DATABASE_URL` para implantação
 - WhiteNoise para arquivos estáticos
 - Gunicorn para produção
 - Docker e Docker Compose
@@ -42,8 +42,8 @@ projeto_posto_de_lavagem_ciesa/
 │   ├── static/          # Arquivos estáticos da aplicação
 │   └── manage.py
 ├── database/
-│   ├── schema.sql       # Esquema SQL de referência
-│   └── seed.sql         # Dados SQL de demonstração
+│   ├── schema.sql       # Referência de esquema; migrations Django são a fonte oficial
+│   └── seed.sql         # Script legado de um esquema anterior; não executar
 ├── diagrams/            # Diagramas Draw.io
 ├── docs/                # Requisitos, arquitetura, implantação e apresentação
 ├── frontend/            # Protótipos HTML
@@ -107,14 +107,14 @@ python manage.py migrate
 python manage.py popular_banco
 ```
 
-Usuários de demonstração criados pelo comando:
+O comando cria dados e usuários fictícios para desenvolvimento local. Em um banco novo, as credenciais de demonstração são:
 
 | Perfil | Usuário | Senha |
 |---|---|---|
 | Administrador | `admin` | `admin123` |
 | Recepção | `juliana` | `recepcao123` |
 
-Essas credenciais são apenas para demonstração. Troque ou remova os usuários padrões antes da implantação real.
+Não execute `popular_banco` em produção: ele insere dados fictícios e credenciais conhecidas. Para criar o administrador de produção, use `python manage.py createsuperuser`; crie os demais usuários com senhas próprias.
 
 ### 4. Iniciar o servidor
 
@@ -152,7 +152,7 @@ Inicie os contêineres:
 docker compose up --build
 ```
 
-O Docker Compose cria o banco PostgreSQL e inicia a aplicação Django com Gunicorn:
+O Docker Compose cria o banco PostgreSQL e inicia a aplicação Django com Gunicorn. Por padrão, o serviço web usa `DEBUG=True` para desenvolvimento local; configure `DEBUG=False`, os hosts e as origens CSRF do ambiente antes de usá-lo em produção:
 
 - Aplicação: http://localhost:8000/
 - Banco PostgreSQL: porta `5432`

@@ -1,36 +1,43 @@
--- ============================================================
--- ESQUEMA DE BANCO DE DADOS RELACIONAL (DDL)
--- Projeto: Sistema de Gerenciamento de Posto de Lavagem (Lava Jato do Valmir)
--- Instituição: CIESA - Ciência da Computação
--- Autor: Ednaldo Maciel da Silva
--- ============================================================
+-- Esquema de referência do app Django lavajato.
+-- Fonte oficial: backend/lavajato/models.py e as migrações Django.
+-- Este DDL não substitui `python manage.py migrate`.
+-- Os valores de `choices` são validações do Django e não CHECK constraints.
 
--- 1. TABELA DE CLIENTES (RF02)
+CREATE TABLE IF NOT EXISTS lavajato_empresafaturada (
+    id BIGSERIAL PRIMARY KEY,
+    nome VARCHAR(120) NOT NULL UNIQUE,
+    documento VARCHAR(25),
+    telefone VARCHAR(20),
+    email VARCHAR(254),
+    observacoes TEXT,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    data_cadastro TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS lavajato_cliente (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
+    empresa_faturada_id BIGINT REFERENCES lavajato_empresafaturada(id) ON DELETE RESTRICT,
     nome VARCHAR(120) NOT NULL,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('AVULSO', 'FATURADO')),
+    tipo VARCHAR(20) NOT NULL DEFAULT 'AVULSO',
     telefone VARCHAR(20),
     documento VARCHAR(25),
     observacoes TEXT,
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
-    data_cadastro TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    data_cadastro TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. TABELA DE VEÍCULOS (RF02, RN01)
 CREATE TABLE IF NOT EXISTS lavajato_veiculo (
-    id SERIAL PRIMARY KEY,
-    cliente_id INTEGER NOT NULL REFERENCES lavajato_cliente(id) ON DELETE CASCADE,
+    id BIGSERIAL PRIMARY KEY,
+    cliente_id BIGINT NOT NULL REFERENCES lavajato_cliente(id) ON DELETE CASCADE,
     placa VARCHAR(10) NOT NULL UNIQUE,
     modelo VARCHAR(50) NOT NULL,
-    marca VARCHAR(50) NOT NULL,
+    marca VARCHAR(50) NOT NULL DEFAULT '',
     cor VARCHAR(30),
-    tipo_veiculo VARCHAR(30) NOT NULL
+    tipo_veiculo VARCHAR(30) NOT NULL DEFAULT 'Médio'
 );
 
--- 3. TABELA DE LAVADORES (RF03)
 CREATE TABLE IF NOT EXISTS lavajato_lavador (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     cpf VARCHAR(20),
     telefone VARCHAR(20),
@@ -38,43 +45,34 @@ CREATE TABLE IF NOT EXISTS lavajato_lavador (
     ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- 4. TABELA DE CATÁLOGO DE SERVIÇOS (RF04, RN03)
 CREATE TABLE IF NOT EXISTS lavajato_servico (
-    id SERIAL PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
     descricao VARCHAR(100) NOT NULL,
     valor DECIMAL(10,2) NOT NULL,
     tempo_estimado_minutos INTEGER NOT NULL DEFAULT 30,
     ativo BOOLEAN NOT NULL DEFAULT TRUE
 );
 
--- 5. TABELA DE ORDENS DE SERVIÇO (RF05, RN01, RN02)
+-- auth_user é criada pelas migrações do Django antes das tabelas do app.
 CREATE TABLE IF NOT EXISTS lavajato_ordemservico (
-    id SERIAL PRIMARY KEY,
-    veiculo_id INTEGER NOT NULL REFERENCES lavajato_veiculo(id) ON DELETE RESTRICT,
-    servico_id INTEGER NOT NULL REFERENCES lavajato_servico(id) ON DELETE RESTRICT,
-    lavador_id INTEGER NOT NULL REFERENCES lavajato_lavador(id) ON DELETE RESTRICT,
-    usuario_id INTEGER NOT NULL REFERENCES auth_user(id) ON DELETE RESTRICT,
-    status VARCHAR(30) NOT NULL CHECK (status IN ('FILA', 'LAVAGEM', 'SECAGEM', 'CONCLUIDO', 'ENTREGUE')),
+    id BIGSERIAL PRIMARY KEY,
+    veiculo_id BIGINT NOT NULL REFERENCES lavajato_veiculo(id) ON DELETE RESTRICT,
+    servico_id BIGINT NOT NULL REFERENCES lavajato_servico(id) ON DELETE RESTRICT,
+    lavador_id BIGINT NOT NULL REFERENCES lavajato_lavador(id) ON DELETE RESTRICT,
+    usuario_id BIGINT NOT NULL REFERENCES auth_user(id) ON DELETE RESTRICT,
+    status VARCHAR(30) NOT NULL DEFAULT 'FILA',
     observacoes_veiculo TEXT,
     valor_total DECIMAL(10,2),
-    data_hora TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    data_hora_saida TIMESTAMP
+    data_hora TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_hora_saida TIMESTAMP WITH TIME ZONE
 );
 
--- 6. TABELA DE PAGAMENTOS (RF06, RN02)
 CREATE TABLE IF NOT EXISTS lavajato_pagamento (
-    id SERIAL PRIMARY KEY,
-    ordem_servico_id INTEGER NOT NULL UNIQUE REFERENCES lavajato_ordemservico(id) ON DELETE CASCADE,
-    forma_pagamento VARCHAR(30) NOT NULL CHECK (forma_pagamento IN ('PIX', 'DINHEIRO', 'CARTAO', 'FATURADO')),
-    momento_pagamento VARCHAR(20) NOT NULL CHECK (momento_pagamento IN ('ENTRADA', 'RETIRADA')),
-    status VARCHAR(20) NOT NULL CHECK (status IN ('PENDENTE', 'CONCLUIDO')),
+    id BIGSERIAL PRIMARY KEY,
+    ordem_servico_id BIGINT NOT NULL UNIQUE REFERENCES lavajato_ordemservico(id) ON DELETE CASCADE,
+    forma_pagamento VARCHAR(30) NOT NULL,
+    momento_pagamento VARCHAR(20) NOT NULL DEFAULT 'ENTRADA',
+    status VARCHAR(20) NOT NULL DEFAULT 'CONCLUIDO',
     valor_pago DECIMAL(10,2) NOT NULL,
-    data_pagamento TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    data_pagamento TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
--- ÍNDICES DE PERFORMANCE (RNF03)
-CREATE INDEX IF NOT EXISTS idx_veiculo_placa ON lavajato_veiculo(placa);
-CREATE INDEX IF NOT EXISTS idx_veiculo_cliente ON lavajato_veiculo(cliente_id);
-CREATE INDEX IF NOT EXISTS idx_os_data_hora ON lavajato_ordemservico(data_hora);
-CREATE INDEX IF NOT EXISTS idx_os_status ON lavajato_ordemservico(status);
-CREATE INDEX IF NOT EXISTS idx_os_veiculo ON lavajato_ordemservico(veiculo_id);

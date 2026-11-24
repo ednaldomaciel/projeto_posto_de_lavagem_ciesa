@@ -35,14 +35,14 @@
 4. A Recepcionista seleciona o lavador responsável respeitando a ordem de chegada no pátio.
 5. A Recepcionista confirma a abertura da OS.
 6. O sistema valida os dados, registra a OS com status `FILA`, atribui a data/hora atual e gera o número da OS.
-7. O sistema exibe a confirmação na tela e disponibiliza o comprovante de entrada para impressão/envio.
+7. O sistema cria o registro financeiro: pagamento imediato ou pendente para cliente avulso, ou lançamento `FATURADO` pendente para a empresa vinculada. Não há comprovante individual de OS.
 
 #### Fluxos Alternativos
 * **FA01 - Cliente Faturado com Limite Semanal Excedido (Validação RN01):**
   1. No passo 2, o sistema identifica que o cliente associado ao veículo é do tipo `FATURADO`.
   2. O sistema verifica o histórico de atendimentos da semana corrente para aquela placa.
   3. Se já houver 1 lavagem registrada no período, o sistema exibe uma mensagem de alerta: *"Limite semanal de lavagens atingido para este veículo faturado."*
-  4. O sistema bloqueia a abertura como faturado e oferece a opção de realizar o atendimento como `AVULSO` (pagamento imediato) ou cancelar a operação.
+  4. O sistema bloqueia a abertura da OS para aquela placa; não há conversão automática para cliente avulso.
 
 #### Fluxos de Exceção
 * **FE01 - Veículo Não Encontrado:**
@@ -54,37 +54,39 @@
 ### UC03: Atualizar Status da Lavagem no Pátio
 
 * **Ator Principal:** Lavador / Recepcionista
-* **Pré-condição:** Existir uma OS aberta com status diferente de `CONCLUIDO`.
-* **Pós-condição:** Status da OS atualizado no painel em tempo real.
+* **Pré-condição:** Existir uma OS do dia no quadro operacional.
+* **Pós-condição:** Status da OS atualizado no quadro, até `ENTREGUE`.
 
 #### Fluxo Principal
 1. O Lavador acessa o sistema no dispositivo móvel/pátio e visualiza a fila de veículos sob sua responsabilidade.
 2. O Lavador seleciona a OS correspondente ao seu veículo.
 3. O Lavador altera o status do serviço (ex: de `FILA` para `LAVAGEM`, ou de `LAVAGEM` para `SECAGEM`).
-4. O sistema atualiza o status em tempo real no painel geral da recepção.
+4. Ao consultar ou atualizar a página, a recepção vê o status salvo; não há atualização por WebSocket ou mecanismo push.
 5. Ao concluir o serviço, o Lavador altera o status para `CONCLUIDO`.
-6. O sistema registra a hora de término e libera o veículo para entrega/pagamento.
+6. `CONCLUIDO` indica que o serviço está pronto; a entrega ao cliente é registrada separadamente e atualiza `data_hora_saida`.
 
 ---
 
-### UC04: Registrar Pagamento e Fechar OS
+### UC04: Registrar Pagamento Avulso
 
 * **Ator Principal:** Recepcionista
 * **Ator Secundário:** Administrador
-* **Pré-condição:** Existir uma OS associada ao veículo.
-* **Pós-condição:** Registro financeiro salvo e OS finalizada.
+* **Pré-condição:** Existir um pagamento avulso pendente associado a uma OS.
+* **Pós-condição:** Registro financeiro marcado como concluído. A entrega física do veículo é uma transição separada.
 
 #### Fluxo Principal
-1. A Recepcionista pesquisa a OS pela placa do veículo ou número do atendimento.
-2. O sistema exibe os detalhes da OS e o valor total a ser pago.
-3. A Recepcionista seleciona a forma de pagamento (`DINHEIRO`, `PIX`, `CARTAO` ou `FATURADO`).
-4. A Recepcionista confirma o recebimento.
-5. O sistema registra o pagamento na tabela de `pagamentos`, atualiza o status financeiro da OS para pago e emite o comprovante.
+1. A Recepcionista seleciona uma OS avulsa pendente na lista de atendimentos da recepção.
+2. O sistema exibe o valor da OS.
+3. A Recepcionista seleciona `DINHEIRO`, `PIX` ou `CARTAO` e confirma o recebimento.
+4. O sistema marca o pagamento como concluído.
+
+#### Fluxo de cliente faturado
+O cliente não paga no atendimento. A OS permanece pendente para a `EmpresaFaturada` vinculada ao cliente e aparece no relatório filtrado por empresa. A seleção da empresa no cadastro do cliente é a associação usada para consolidar os valores.
 
 #### Fluxo Alternativo
-* **FA01 - Pagamento Efetuado na Entrada (RN02):**
+* **FA01 - Pagamento Efetuado na Entrada (RN02, cliente avulso):**
   1. O pagamento é registrado logo após a execução do **UC02 (Abrir OS)**.
-  2. Ao finalizar a lavagem no **UC03**, o sistema identifica que a OS já está quitada e libera o veículo automaticamente para entrega ao cliente.
+  2. O pagamento fica registrado como concluído; o avanço para `ENTREGUE` é uma ação operacional separada.
 
 ---
 
@@ -92,13 +94,14 @@
 
 * **Ator Principal:** Recepcionista, Administrador
 * **Requisito Relacionado:** RF07
+* **Situação:** O sistema permite buscar um veículo pela placa, mas uma tela de histórico completo não está implementada.
 * **Pré-condição:** Usuário autenticado no sistema.
-* **Pós-condição:** Histórico de atendimentos do veículo exibido com datas, serviços e valores.
+* **Pós-condição:** Quando implementado, o histórico deverá exibir datas, serviços e valores; esse fluxo ainda não está disponível.
 
 #### Fluxo Principal
 1. O operador informa a placa do veículo na tela de recepção.
-2. O sistema recupera e exibe todos os atendimentos já realizados para a referida placa.
-3. O operador visualiza o histórico de serviços, datas e o cliente associado.
+2. O sistema recupera o veículo e o cliente associado.
+3. A consulta de todos os atendimentos anteriores ainda depende de implementação.
 
 ---
 
@@ -117,14 +120,13 @@
 5. O Administrador clica em **Consultar Relatório**.
 6. O sistema processa as Ordens de Serviço do período, calculando o montante total a faturar, quantidade de veículos atendidos, total pendente e lista detalhada das OSs.
 7. O Administrador clica em **Imprimir Fatura / Relatório de Cobrança**.
-8. O sistema renderiza o demonstrativo oficial no endpoint `/gerenciamento/imprimir/?tipo=faturado...` contendo:
-   - Cabeçalho institucional do Lava Jato do Valmir (Razão Social, CNPJ, Telefone, Endereço e Chave PIX).
-   - Dados cadastrais da empresa conveniada (Razão Social, CNPJ/CPF, Telefone).
+8. O sistema renderiza o demonstrativo para impressão no endpoint `/gerenciamento/imprimir/?tipo=faturado&empresa_id=...` contendo:
+   - Cabeçalho e dados do tomador definidos no template/view. Dados de identificação, endereço e conta bancária do estabelecimento são exemplos no código e precisam ser conferidos antes de uma cobrança real.
+   - Dados disponíveis da empresa faturada (Razão Social, CNPJ e telefone).
    - Tabela detalhada de atendimentos (Data/Hora, Nº OS, Placa, Modelo, Serviço, Lavador e Valor).
    - Quadro resumo de valores a receber com destaque financeiro.
-   - Instruções formais de pagamento via transferência / PIX com prazo de vencimento.
-   - Campos de assinatura e protocolo para aceite da empresa cliente.
-9. O Administrador aciona a impressão no navegador (ou salva em PDF) para envio e cobrança junto ao setor financeiro da empresa parceira.
+   - Instruções de pagamento e campos de assinatura apresentados no template.
+9. O Administrador pode imprimir a página ou usar a opção de salvar em PDF do navegador. O projeto não gera nem valida PDF digitalmente.
 
 #### Fluxos Alternativos
 * **FA01 - Fechamento de Caixa Diário:**

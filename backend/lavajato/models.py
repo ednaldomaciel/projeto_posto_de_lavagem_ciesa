@@ -6,7 +6,26 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-# 1. Tabela: Clientes (Avulso vs Faturado / Conveniado - RF02)
+# 1. Cadastro das empresas faturadas / conveniadas
+class EmpresaFaturada(models.Model):
+    nome = models.CharField('Nome / Razão Social', max_length=120, unique=True)
+    documento = models.CharField('CNPJ', max_length=25, blank=True, null=True)
+    telefone = models.CharField('Telefone / WhatsApp', max_length=20, blank=True, null=True)
+    email = models.EmailField('E-mail', blank=True, null=True)
+    observacoes = models.TextField('Observações', blank=True, null=True)
+    ativo = models.BooleanField('Ativo', default=True)
+    data_cadastro = models.DateTimeField('Data de Cadastro', default=timezone.now)
+
+    class Meta:
+        verbose_name = 'Empresa Faturada'
+        verbose_name_plural = 'Empresas Faturadas'
+        ordering = ['nome']
+
+    def __str__(self):
+        return self.nome
+
+
+# 2. Tabela: Clientes (Avulso vs Faturado / Conveniado - RF02)
 class Cliente(models.Model):
     TIPO_CHOICES = [
         ('AVULSO', 'Avulso (Pessoa Física)'),
@@ -18,6 +37,15 @@ class Cliente(models.Model):
     telefone = models.CharField('Telefone / WhatsApp', max_length=20, blank=True, null=True)
     documento = models.CharField('CPF / CNPJ', max_length=25, blank=True, null=True)
     observacoes = models.TextField('Observações', blank=True, null=True)
+    empresa_faturada = models.ForeignKey(
+        EmpresaFaturada,
+        on_delete=models.PROTECT,
+        related_name='clientes',
+        verbose_name='Empresa Faturada',
+        blank=True,
+        null=True,
+        help_text='Obrigatória quando o tipo do cliente for Faturado.',
+    )
     ativo = models.BooleanField('Ativo', default=True)
     data_cadastro = models.DateTimeField('Data de Cadastro', default=timezone.now)
 
@@ -29,8 +57,19 @@ class Cliente(models.Model):
     def __str__(self):
         return f"{self.nome} ({self.get_tipo_display()})"
 
+    def clean(self):
+        super().clean()
+        if self.tipo == 'FATURADO' and not self.empresa_faturada_id:
+            raise ValidationError({
+                'empresa_faturada': 'Selecione uma empresa faturada para clientes faturados.'
+            })
 
-# 2. Tabela: Veículos (RF02)
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+# 3. Tabela: Veículos (RF02)
 class Veiculo(models.Model):
     TIPO_VEICULO_CHOICES = [
         ('Pequeno', 'Pequeno / Hatch'),
@@ -44,7 +83,7 @@ class Veiculo(models.Model):
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='veiculos', verbose_name='Cliente Proprietário')
     placa = models.CharField('Placa', max_length=10, unique=True)
     modelo = models.CharField('Modelo', max_length=50)
-    marca = models.CharField('Marca / Fabricante', max_length=50)
+    marca = models.CharField('Marca / Fabricante', max_length=50, blank=True, default='')
     cor = models.CharField('Cor', max_length=30, blank=True, null=True)
     tipo_veiculo = models.CharField('Porte do Veículo', max_length=30, choices=TIPO_VEICULO_CHOICES, default='Médio')
 
@@ -79,7 +118,8 @@ class Veiculo(models.Model):
         return True, ""
 
     def __str__(self):
-        return f"{self.placa} - {self.marca} {self.modelo} ({self.cliente.nome})"
+        identificacao = f"{self.marca} {self.modelo}".strip()
+        return f"{self.placa} - {identificacao} ({self.cliente.nome})"
 
 
 # 3. Tabela: Lavadores (RF03)
@@ -182,6 +222,7 @@ class Pagamento(models.Model):
         ('DINHEIRO', 'Dinheiro em Espécie'),
         ('CARTAO', 'Cartão de Débito/Crédito'),
         ('FATURADO', 'Faturado / Convênio Corporativo'),
+        ('PENDENTE', 'Pagamento a definir'),
     ]
 
     MOMENTO_CHOICES = [

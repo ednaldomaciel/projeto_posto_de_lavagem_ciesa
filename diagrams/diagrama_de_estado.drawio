@@ -30,10 +30,6 @@
                 <mxCell id="st_entregue" parent="1" style="rounded=1;arcSize=15;strokeWidth=2;fillColor=#f8fafc;strokeColor=#64748b;fontColor=#0f172a;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;" value="ENTREGUE&#xa;(Veículo Liberado)" vertex="1">
                     <mxGeometry x="850" y="380" width="160" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="st_cancelada" parent="1" style="rounded=1;arcSize=15;strokeWidth=2;fillColor=#fef2f2;strokeColor=#ef4444;fontColor=#7f1d1d;fontSize=12;fontStyle=1;align=center;verticalAlign=middle;" value="CANCELADA&#xa;(Desistência Pré-Início)" vertex="1">
-                    <mxGeometry x="160" y="380" width="160" height="60" as="geometry"/>
-                </mxCell>
-
                 <!-- Estado Final -->
                 <mxCell id="st_final" parent="1" style="ellipse;shape=endState;fillColor=#0f172a;strokeColor=#94a3b8;strokeWidth=2;" vertex="1">
                     <mxGeometry x="915" y="520" width="30" height="30" as="geometry"/>
@@ -43,11 +39,9 @@
                 <mxCell id="t0" edge="1" parent="1" source="st_init" target="st_fila" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
                 <mxCell id="t1" edge="1" parent="1" source="st_fila" target="st_lavagem" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;" value="Lavador assume veículo&#xa;[Lavador.ativo = True]"><mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
                 <mxCell id="t2" edge="1" parent="1" source="st_lavagem" target="st_secagem" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;" value="Fim da lavagem bruta&#xa;(Água e Xampu)"><mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
-                <mxCell id="t3" edge="1" parent="1" source="st_secagem" target="st_concluido" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;" value="Conclui acabamento&#xa;/ data_hora_saida = now()"><mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
-                <mxCell id="t4" edge="1" parent="1" source="st_concluido" target="st_entregue" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;" value="[Pagamento = CONCLUIDO (RN02)]&#xa;Cliente retira veículo"><mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+                <mxCell id="t3" edge="1" parent="1" source="st_secagem" target="st_concluido" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;" value="Conclui acabamento"><mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+                <mxCell id="t4" edge="1" parent="1" source="st_concluido" target="st_entregue" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;" value="Registra entrega&#xa;/ data_hora_saida = now()"><mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
                 <mxCell id="t5" edge="1" parent="1" source="st_entregue" target="st_final" style="endArrow=block;html=1;strokeColor=#334155;strokeWidth=2;endFill=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
-                <mxCell id="t_canc" edge="1" parent="1" source="st_fila" target="st_cancelada" style="endArrow=block;html=1;strokeColor=#ef4444;strokeWidth=1.5;endFill=1;dashed=1;" value="Desistência antes&#xa;de iniciar lavagem"><mxGeometry relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
-                <mxCell id="t_canc_final" edge="1" parent="1" source="st_cancelada" target="st_final" style="endArrow=block;html=1;strokeColor=#ef4444;strokeWidth=1.5;endFill=1;dashed=1;"><mxGeometry relative="1" as="geometry"/></mxCell>
             </root>
         </mxGraphModel>
     </diagram>
